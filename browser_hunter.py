@@ -268,22 +268,7 @@ async def execute_tweet_tasks(
                     except Exception:
                         pass
 
-                # 1. Buka kotak balasan dengan klik icon reply atau placeholder label
-                r_icon = tweet_page.locator('[data-testid="reply"]').first
-                if await r_icon.count() > 0 and await r_icon.is_visible():
-                    await r_icon.scroll_into_view_if_needed()
-                    await r_icon.click(force=True)
-                    await asyncio.sleep(1.2)
-                else:
-                    placeholder_label = tweet_page.locator('[data-testid="tweetTextarea_0_label"], div:has-text("Post your reply")').first
-                    if await placeholder_label.count() > 0 and await placeholder_label.is_visible():
-                        await placeholder_label.click(force=True)
-                        await asyncio.sleep(1.0)
-                    else:
-                        await tweet_page.evaluate("window.scrollBy(0, 300);")
-                        await asyncio.sleep(1.0)
-
-                # 2. Cari active textarea (prioritaskan modal dialog, lalu inline, lalu contenteditable)
+                # 1. Cek apakah textarea balasan sudah aktif/terbuka di halaman
                 active_textarea = None
                 dialog_ta = tweet_page.locator('[role="dialog"] [data-testid="tweetTextarea_0"]').first
                 inline_ta = tweet_page.locator('[data-testid="tweetTextarea_0"]').first
@@ -295,37 +280,71 @@ async def execute_tweet_tasks(
                     active_textarea = inline_ta
                 elif await generic_ta.count() > 0 and await generic_ta.is_visible():
                     active_textarea = generic_ta
-                elif await inline_ta.count() > 0:
-                    active_textarea = inline_ta
+
+                # Jika belum terbuka, picu dengan klik icon reply atau placeholder label
+                if not active_textarea:
+                    r_icon = tweet_page.locator('article[data-testid="tweet"] [data-testid="reply"], [data-testid="reply"]').first
+                    if await r_icon.count() > 0 and await r_icon.is_visible():
+                        await r_icon.scroll_into_view_if_needed()
+                        await r_icon.click(force=True)
+                        await asyncio.sleep(1.2)
+                    else:
+                        placeholder_label = tweet_page.locator('[data-testid="tweetTextarea_0_label"], div:has-text("Post your reply")').first
+                        if await placeholder_label.count() > 0 and await placeholder_label.is_visible():
+                            await placeholder_label.click(force=True)
+                            await asyncio.sleep(1.0)
+                        else:
+                            await tweet_page.evaluate("window.scrollBy(0, 300);")
+                            await asyncio.sleep(1.0)
+
+                    # Cari ulang setelah dipicu
+                    if await dialog_ta.count() > 0 and await dialog_ta.is_visible():
+                        active_textarea = dialog_ta
+                    elif await inline_ta.count() > 0 and await inline_ta.is_visible():
+                        active_textarea = inline_ta
+                    elif await generic_ta.count() > 0 and await generic_ta.is_visible():
+                        active_textarea = generic_ta
+                    elif await inline_ta.count() > 0:
+                        active_textarea = inline_ta
 
                 if active_textarea:
                     full_reply_text = target_wallet.strip()
                     await active_textarea.scroll_into_view_if_needed()
                     await active_textarea.click(force=True)
-                    await asyncio.sleep(0.4)
+                    await asyncio.sleep(0.3)
 
                     # Ketik alamat wallet secara natural agar state DraftJS terupdate 100%
                     await tweet_page.keyboard.type(full_reply_text, delay=10)
-                    await asyncio.sleep(0.6)
+                    await asyncio.sleep(0.5)
 
                     # Kirim via shortcut resmi Twitter Control+Enter
                     await tweet_page.keyboard.press("Control+Enter")
 
-                    # Fallback jika belum terkirim via keyboard: klik tombol Reply
+                    # Fallback: klik tombol Reply jika masih aktif
                     send_btn = tweet_page.locator('[role="dialog"] [data-testid="tweetButtonInline"], [role="dialog"] [data-testid="tweetButton"], [data-testid="tweetButtonInline"], [data-testid="tweetButton"]').first
                     if await send_btn.count() > 0 and await send_btn.is_enabled():
-                        await send_btn.click(force=True)
+                        try:
+                            await send_btn.click(force=True, timeout=2000)
+                        except Exception:
+                            pass
 
-                    # Verifikasi pengiriman berhasil (textarea kosong atau toast muncul)
+                    # Verifikasi pengiriman aman tanpa blocking 30 detik pada elemen yang tertutup
                     reply_sent_ok = False
                     for _ in range(8):
                         await asyncio.sleep(0.8)
-                        val = await active_textarea.inner_text() if await active_textarea.count() > 0 else ""
-                        if not val.strip():
-                            reply_sent_ok = True
-                            break
                         toast = tweet_page.locator('div:has-text("Your post was sent")').first
                         if await toast.count() > 0:
+                            reply_sent_ok = True
+                            break
+                        try:
+                            if await active_textarea.count() == 0 or not await active_textarea.is_visible():
+                                reply_sent_ok = True
+                                break
+                            val = await active_textarea.inner_text(timeout=500)
+                            if not val.strip():
+                                reply_sent_ok = True
+                                break
+                        except Exception:
                             reply_sent_ok = True
                             break
 
@@ -366,15 +385,19 @@ async def execute_tweet_tasks(
                 f_page = None
                 try:
                     f_page = await context.new_page()
-                    await f_page.goto(f"https://x.com/{author}", wait_until="domcontentloaded", timeout=20000)
-                    await asyncio.sleep(2.5)
+                    await f_page.goto(f"https://x.com/{author}", wait_until="commit", timeout=15000)
+                    try:
+                        await f_page.wait_for_selector('button[data-testid$="-follow"], button[data-testid$="-unfollow"]', timeout=8000)
+                    except Exception:
+                        pass
+                    await asyncio.sleep(1.5)
                     p_follow = f_page.locator('button[data-testid$="-follow"]').first
                     p_unfollow = f_page.locator('button[data-testid$="-unfollow"]').first
                     if await p_follow.count() > 0 and await p_follow.is_visible():
                         await p_follow.click(force=True)
                         actions_done.append(f"Follow @{author} 👤")
                         print(f"   [4/4] 👤 Follow @{author}  : {GREEN}✓ Berhasil follow (Author Profile){RESET}")
-                        await asyncio.sleep(random.uniform(1.2, 2.0))
+                        await asyncio.sleep(random.uniform(1.0, 1.8))
                     elif await p_unfollow.count() > 0:
                         actions_done.append(f"Follow @{author} (Sudah followed)")
                         print(f"   [4/4] 👤 Follow @{author}  : {YELLOW}✓ Sudah di-follow sebelumnya{RESET}")
