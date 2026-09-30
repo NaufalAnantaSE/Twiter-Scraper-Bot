@@ -106,8 +106,18 @@ async def execute_tweet_tasks(
     try:
         # Buka tab terisolasi untuk tweet ini agar DOM & scrolling feed pencarian tetap bersih
         tweet_page = await context.new_page()
-        await tweet_page.goto(tweet_url, wait_until="domcontentloaded", timeout=35000)
-        await asyncio.sleep(3.5)
+        try:
+            await tweet_page.goto(tweet_url, wait_until="commit", timeout=25000)
+        except Exception:
+            pass
+
+        # Tunggu tweet article ter-mount di DOM
+        try:
+            await tweet_page.wait_for_selector('article[data-testid="tweet"], article, [data-testid="like"], [data-testid="reply"]', timeout=12000)
+        except Exception:
+            pass
+
+        await asyncio.sleep(2.0)
 
         # Tutup dialog / banner pengganggu jika muncul
         popup_selectors = [
@@ -258,46 +268,59 @@ async def execute_tweet_tasks(
                     except Exception:
                         pass
 
-                # Pastikan reply box aktif dan terfokus
-                r_icon = main_tweet.locator('[data-testid="reply"]').first
+                # 1. Buka kotak balasan dengan klik icon reply atau placeholder label
+                r_icon = tweet_page.locator('[data-testid="reply"]').first
                 if await r_icon.count() > 0 and await r_icon.is_visible():
                     await r_icon.scroll_into_view_if_needed()
                     await r_icon.click(force=True)
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(1.2)
                 else:
-                    page_reply = tweet_page.locator('[data-testid="reply"]').first
-                    if await page_reply.count() > 0 and await page_reply.is_visible():
-                        await page_reply.scroll_into_view_if_needed()
-                        await page_reply.click(force=True)
-                        await asyncio.sleep(1.5)
+                    placeholder_label = tweet_page.locator('[data-testid="tweetTextarea_0_label"], div:has-text("Post your reply")').first
+                    if await placeholder_label.count() > 0 and await placeholder_label.is_visible():
+                        await placeholder_label.click(force=True)
+                        await asyncio.sleep(1.0)
                     else:
-                        await tweet_page.evaluate("window.scrollBy(0, 400);")
-                        await asyncio.sleep(1.5)
+                        await tweet_page.evaluate("window.scrollBy(0, 300);")
+                        await asyncio.sleep(1.0)
 
-                reply_textarea = tweet_page.locator('[data-testid="tweetTextarea_0"]').first
-                if await reply_textarea.count() > 0:
+                # 2. Cari active textarea (prioritaskan modal dialog, lalu inline, lalu contenteditable)
+                active_textarea = None
+                dialog_ta = tweet_page.locator('[role="dialog"] [data-testid="tweetTextarea_0"]').first
+                inline_ta = tweet_page.locator('[data-testid="tweetTextarea_0"]').first
+                generic_ta = tweet_page.locator('div[contenteditable="true"][role="textbox"]').first
+
+                if await dialog_ta.count() > 0 and await dialog_ta.is_visible():
+                    active_textarea = dialog_ta
+                elif await inline_ta.count() > 0 and await inline_ta.is_visible():
+                    active_textarea = inline_ta
+                elif await generic_ta.count() > 0 and await generic_ta.is_visible():
+                    active_textarea = generic_ta
+                elif await inline_ta.count() > 0:
+                    active_textarea = inline_ta
+
+                if active_textarea:
                     full_reply_text = target_wallet.strip()
-                    await reply_textarea.scroll_into_view_if_needed()
-                    await reply_textarea.click(force=True)
-                    await asyncio.sleep(0.5)
+                    await active_textarea.scroll_into_view_if_needed()
+                    await active_textarea.click(force=True)
+                    await asyncio.sleep(0.4)
 
                     # Ketik alamat wallet secara natural agar state DraftJS terupdate 100%
                     await tweet_page.keyboard.type(full_reply_text, delay=10)
-                    await asyncio.sleep(0.8)
+                    await asyncio.sleep(0.6)
 
                     # Kirim via shortcut resmi Twitter Control+Enter
                     await tweet_page.keyboard.press("Control+Enter")
 
                     # Fallback jika belum terkirim via keyboard: klik tombol Reply
-                    send_btn = tweet_page.locator('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]').first
+                    send_btn = tweet_page.locator('[role="dialog"] [data-testid="tweetButtonInline"], [role="dialog"] [data-testid="tweetButton"], [data-testid="tweetButtonInline"], [data-testid="tweetButton"]').first
                     if await send_btn.count() > 0 and await send_btn.is_enabled():
                         await send_btn.click(force=True)
 
                     # Verifikasi pengiriman berhasil (textarea kosong atau toast muncul)
                     reply_sent_ok = False
-                    for _ in range(10):
-                        await asyncio.sleep(1.0)
-                        val = await reply_textarea.inner_text() if await reply_textarea.count() > 0 else ""
+                    for _ in range(8):
+                        await asyncio.sleep(0.8)
+                        val = await active_textarea.inner_text() if await active_textarea.count() > 0 else ""
                         if not val.strip():
                             reply_sent_ok = True
                             break
@@ -316,7 +339,7 @@ async def execute_tweet_tasks(
 
                     actions_done.append(f"Drop {target_network} ({target_wallet[:6]}...{target_wallet[-4:]}) 👛")
                     print(f"   [3/4] 👛 Drop Address     : {GREEN}✓ Berhasil terkirim ke X! ({target_network}: {target_wallet[:6]}...){RESET}")
-                    await asyncio.sleep(random.uniform(1.5, 3.0))
+                    await asyncio.sleep(random.uniform(1.2, 2.5))
                 else:
                     print(f"   [3/4] 👛 Drop Address     : {RED}✗ Input box balasan tidak ditemukan{RESET}")
             except Exception as e:
