@@ -1,0 +1,24 @@
+# ==============================================================================
+# DAFTAR TARGET AKUN VIRAL (COMMENT HIJACKING)
+# ==============================================================================
+# Bot akan memantau tweet terbaru dari akun-akun di bawah ini dan langsung
+# memberikan komentar yang relevan dan engaging saat mereka baru memposting tweet.
+# 
+# Format: Satu username per baris (bisa pakai @ atau tanpa @).
+# ==============================================================================
+
+@solana
+@binance
+@cz_binance
+@phantom
+@JupiterExchange
+@RaydiumProtocol
+@base
+@pumpdotfun
+@VitalikButerin
+@CoinMarketCap
+@coingecko
+@arbitrum
+@optimism
+@SuiNetwork
+@Aptos_Network

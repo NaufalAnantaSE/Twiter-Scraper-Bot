@@ -1,0 +1,11 @@
+# ==============================================================================
+# WHITELIST UNFOLLOW BOT TWITTER / X
+# ==============================================================================
+# Masukkan username / handle Twitter akun-akun yang TIDAK BOLEH di-unfollow.
+# Tulis satu username per baris (bisa menggunakan @ atau tanpa @).
+# Contoh:
+# @elonmusk
+# binance
+# cz_binance
+# TemanDekatAkun
+# ==============================================================================

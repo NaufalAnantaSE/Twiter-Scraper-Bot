@@ -1,0 +1,21 @@
+# Sensitive credentials and tokens
+accounts.json
+wallets.json
+cookies.json
+*.session
+
+# Results & History logs
+results/
+*.png
+*.log
+
+# Python & Environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+.venv/
+.idea/
+.vscode/
