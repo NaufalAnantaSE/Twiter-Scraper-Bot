@@ -329,11 +329,29 @@ def main():
     parser.add_argument("--delay-min", type=float, default=3.0, help="Delay minimal antar unfollow dalam detik (default: 3.0)")
     parser.add_argument("--delay-max", type=float, default=6.0, help="Delay maksimal antar unfollow dalam detik (default: 6.0)")
     parser.add_argument("--whitelist", type=str, default="whitelist.txt", help="Path ke file whitelist (default: whitelist.txt)")
+    parser.add_argument("--all-accounts", action="store_true", help="Jalankan unfollow untuk semua akun yang terdaftar di accounts.json")
     parser.add_argument("-a", "--account", type=str, default="fannettt", help="Username akun target (default: fannettt)")
     parser.add_argument("--dry-run", action="store_true", help="Simulasi saja tanpa melakukan unfollow")
     parser.add_argument("--visible", action="store_true", help="Tampilkan jendela browser (default: headless)")
 
     args = parser.parse_args()
+
+    if args.all_accounts:
+        from multi_account_unfollow import main_loop
+        try:
+            asyncio.run(main_loop(
+                target_account="",
+                keep_followers=not args.include_followers,
+                delay_min=args.delay_min,
+                delay_max=args.delay_max,
+                whitelist_file=Path(args.whitelist),
+                dry_run=args.dry_run,
+                headless=not args.visible
+            ))
+        except KeyboardInterrupt:
+            print(f"\n{YELLOW}Bot unfollow dihentikan oleh pengguna.{RESET}")
+            sys.exit(0)
+        return
 
     max_target = 9999 if args.unfollow_all else args.max
     keep_followers = not args.include_followers
