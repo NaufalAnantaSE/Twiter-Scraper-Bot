@@ -52,12 +52,15 @@ def analyze_airdrop_tweet(text: str, author_username: str = "") -> AirdropRequir
     clean_text = text.strip()
 
     # 1. Deteksi spesifik "Drop Address / Drop Wallet"
-    # Pola: kata kerja (drop/comment/leave/send) + kata benda (address/wallet/0x/sol/eth)
+    # Pola: kata kerja (drop/comment/leave/send) + kata benda (address/wallet/0x/sol/eth/addy)
     drop_patterns = [
-        r'\b(drop|comment|leave|send|reply\s+with)\s+(your\s+)?(address|wallet|addr|0x|sol|solana|eth|phantom|metamask)\b',
-        r'\b(drop\s+(0x|sol|eth|address|wallet))\b',
-        r'\b(address|wallet|0x|sol)\s+(below|down\s+below|in\s+comments)\b',
-        r'\bdrop\s+your\s+(evm|erc20|bep20|spl)\b'
+        r'\b(drop|comment|leave|send|reply\s+with)\s+(your\s+)?(address|wallet|addr|addy|0x|sol|solana|eth|phantom|metamask)\b',
+        r'\b(drop\s+(0x|sol|eth|address|wallet|addy))\b',
+        r'\b(address|wallet|0x|sol|addy)\s+(below|here|down\s+below|in\s+comments|in\s+the\s+comments)\b',
+        r'\bdrop\s+your\s+(evm|erc20|bep20|spl)\b',
+        r'\b(every\s+wallet\s+gets|first\s+\d+\s+wallets)\b',
+        r'\b(send\s+(some\s+)?(\$sol|\$eth|sol|eth))\b',
+        r'\bdrop\s+(\$sol|\$eth|\$usdt)\b'
     ]
     is_wallet_drop = any(re.search(p, clean_text, re.IGNORECASE) for p in drop_patterns)
 
@@ -71,9 +74,9 @@ def analyze_airdrop_tweet(text: str, author_username: str = "") -> AirdropRequir
     # 2. Deteksi apakah host meminta HANYA alamat saja tanpa teks/komentar
     # (Banyak bot checker giveaway mendiskualifikasi pemenang jika ada teks selain alamat)
     address_only_patterns = [
-        r'\b(address\s+only|wallet\s+only|0x\s+only|sol\s+only)\b',
-        r'\b(only\s+address|only\s+wallet|only\s+0x|only\s+sol)\b',
-        r'\b(no\s+text|just\s+address|just\s+wallet|just\s+your\s+address)\b'
+        r'\b(address\s+only|wallet\s+only|0x\s+only|sol\s+only|addy\s+only)\b',
+        r'\b(only\s+address|only\s+wallet|only\s+0x|only\s+sol|only\s+addy)\b',
+        r'\b(no\s+text|just\s+address|just\s+wallet|just\s+your\s+address|just\s+addy)\b'
     ]
     address_only_required = any(re.search(p, clean_text, re.IGNORECASE) for p in address_only_patterns)
 
@@ -104,9 +107,9 @@ def analyze_airdrop_tweet(text: str, author_username: str = "") -> AirdropRequir
 
     # 6. Klasifikasi Jaringan: EVM vs SOLANA
     # EVM keywords: 0x, evm, eth, ethereum, erc20, metamask, bsc, bnb, base, arb, arbitrum, polygon, matic
-    is_evm = bool(re.search(r'\b(evm|0x|eth|ethereum|erc20|metamask|bsc|bnb|polygon|matic|arbitrum|arb|base|optimism|avax|bep20)\b', clean_text, re.IGNORECASE))
+    is_evm = bool(re.search(r'\b(evm|0x|eth|ethereum|\$eth|erc20|metamask|bsc|bnb|polygon|matic|arbitrum|arb|base|optimism|avax|bep20)\b', clean_text, re.IGNORECASE))
     # Solana keywords: sol, solana, phantom, backpack, spl
-    is_sol = bool(re.search(r'\b(sol|solana|phantom|backpack|spl)\b', clean_text, re.IGNORECASE))
+    is_sol = bool(re.search(r'\b(sol|solana|\$sol|phantom|backpack|spl)\b', clean_text, re.IGNORECASE))
 
     requires_wallet = is_wallet_drop or is_evm or is_sol
     wallet_type = None

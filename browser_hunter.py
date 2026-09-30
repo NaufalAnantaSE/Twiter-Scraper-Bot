@@ -394,7 +394,14 @@ async def execute_tweet_tasks(
                 ).first
 
                 if await follow_btn.count() > 0 and await follow_btn.is_visible():
-                    await follow_btn.click(force=True)
+                    try:
+                        await follow_btn.scroll_into_view_if_needed(timeout=1500)
+                        await follow_btn.click(force=True)
+                    except Exception:
+                        try:
+                            await tweet_page.evaluate("(el) => el.click()", await follow_btn.element_handle())
+                        except Exception:
+                            pass
                     actions_done.append(f"Follow @{target_user} 👤")
                     print(f"   [4/4] 👤 Follow @{target_user}  : {GREEN}✓ Berhasil follow (Tweet Page){RESET}")
                     await asyncio.sleep(0.3)
@@ -414,7 +421,14 @@ async def execute_tweet_tasks(
                         p_follow = f_page.locator('button[data-testid$="-follow"]').first
                         p_unfollow = f_page.locator('button[data-testid$="-unfollow"]').first
                         if await p_follow.count() > 0 and await p_follow.is_visible():
-                            await p_follow.click(force=True)
+                            try:
+                                await p_follow.scroll_into_view_if_needed(timeout=1500)
+                                await p_follow.click(force=True)
+                            except Exception:
+                                try:
+                                    await f_page.evaluate("(el) => el.click()", await p_follow.element_handle())
+                                except Exception:
+                                    pass
                             actions_done.append(f"Follow @{target_user} 👤")
                             print(f"   [4/4] 👤 Follow @{target_user}  : {GREEN}✓ Berhasil follow (Author Profile){RESET}")
                             await asyncio.sleep(0.3)
@@ -498,21 +512,39 @@ async def run_hunter(
 
     cat = category.upper()
     if cat == "EVM":
-        raw_query = '("drop your 0x" OR "drop 0x" OR "drop your evm" OR "drop your eth") (RT OR Retweet OR Like)'
+        query_streams = [
+            ("TOP: EVM Drop Langsung", '("drop your 0x" OR "drop 0x" OR "drop your evm" OR "drop your eth" OR "drop eth address" OR "drop metamask")'),
+            ("LIVE: EVM Giveaway & Airdrop", '("eth giveaway" OR "evm giveaway" OR "usdt giveaway" OR "crypto airdrop" OR "$ETH giveaway") ("0x" OR "evm" OR "eth" OR "metamask")&f=live'),
+            ("TOP: EVM Instant Claim & Rewards", '("send you eth" OR "send you usdt" OR "every wallet gets" OR "first 500" OR "drop erc20" OR "drop bep20") ("0x" OR "evm" OR "eth")'),
+            ("LIVE: Live Feed Stream 0x", '("drop your 0x" OR "drop 0x" OR "drop your evm" OR "drop your eth")&f=live'),
+            ("TOP: Multi-Chain EVM Bounty & Whitelist", '("crypto giveaway" OR "whitelist giveaway" OR "airdrop") ("0x" OR "evm" OR "drop eth")')
+        ]
     elif cat == "SOLANA":
-        raw_query = '("drop your sol" OR "drop sol" OR "drop your solana" OR "drop phantom") (RT OR Retweet OR Like)'
-    else:
-        raw_query = '("drop your 0x" OR "drop 0x" OR "drop your sol" OR "drop sol" OR "drop your address") (RT OR Retweet OR Like)'
+        query_streams = [
+            ("TOP: Solana Drop Wallet Langsung", '("drop your sol" OR "drop sol address" OR "drop solana address" OR "drop your solana" OR "drop sol addy")'),
+            ("LIVE: Solana Giveaway & Airdrop Terbaru", '("sol giveaway" OR "solana giveaway" OR "$SOL giveaway" OR "sol airdrop" OR "solana airdrop") ("drop" OR "address" OR "wallet" OR "addy")&f=live'),
+            ("TOP: Solana Instant Claim & Memecoin", '("every wallet gets" OR "first 500 wallets" OR "first 1000 wallets" OR "send you sol" OR "drop phantom" OR "drop sol wallet")'),
+            ("LIVE: Live Feed Stream Solana", '("drop your sol" OR "drop sol" OR "sol addy" OR "drop solana")&f=live'),
+            ("TOP: Solana Token & NFT Whitelist", '("solana" OR "$SOL") ("giveaway" OR "airdrop") ("drop wallet" OR "drop address" OR "drop addy")'),
+            ("LIVE: Fast Solana Airdrops", '("$SOL" OR "solana") ("drop your" OR "drop below")&f=live')
+        ]
+    else: # ALL
+        query_streams = [
+            ("TOP: Solana & EVM Drop Langsung", '("drop your sol" OR "drop your 0x" OR "drop your wallet" OR "drop your address" OR "drop sol addy" OR "drop 0x")'),
+            ("LIVE: Crypto Giveaway & Airdrop Terbaru", '("sol giveaway" OR "crypto giveaway" OR "$SOL giveaway" OR "$ETH giveaway" OR "solana airdrop") ("drop" OR "wallet" OR "address" OR "addy")&f=live'),
+            ("TOP: Instant Claim & Wallet Rewards", '("every wallet gets" OR "first 1000 wallets" OR "first 500 wallets" OR "send you sol" OR "send you $" OR "drop phantom" OR "drop metamask")'),
+            ("LIVE: Live Feed Stream All Networks", '("drop your sol" OR "drop your 0x" OR "drop your address" OR "drop your wallet")&f=live'),
+            ("TOP: Token & NFT Whitelist Giveaways", '("airdrop" OR "giveaway") ("drop sol" OR "drop 0x" OR "drop wallet" OR "drop addy")'),
+            ("LIVE: Fast Airdrop Drops", '("drop sol" OR "drop 0x" OR "drop wallet" OR "drop addy")&f=live')
+        ]
 
-    encoded_q = urllib.parse.quote(raw_query)
-
-    # Memindai 2 sumber:
-    # 1. TOP TAB (Paling populer & aktif dalam 12 jam terakhir)
-    # 2. LIVE TAB (Tweet terbaru berurutan mundur)
-    search_targets = [
-        ("TOP (Populer Aktif 12 Jam)", f"https://x.com/search?q={encoded_q}"),
-        ("LIVE (Tweet Terbaru)", f"https://x.com/search?q={encoded_q}&f=live")
-    ]
+    search_targets = []
+    for label, q_str in query_streams:
+        if "&f=live" in q_str:
+            base_q = q_str.replace("&f=live", "").strip()
+            search_targets.append((label, f"https://x.com/search?q={urllib.parse.quote(base_q)}&f=live"))
+        else:
+            search_targets.append((label, f"https://x.com/search?q={urllib.parse.quote(q_str)}"))
 
     async with async_playwright() as p:
         print(f"\n{YELLOW}Membuka browser Google Chrome (Headless: {headless})...{RESET}")
@@ -570,9 +602,11 @@ async def run_hunter(
                 return
 
             scroll_attempts = 0
-            while executed_count < target_count and scroll_attempts < 12:
+            consecutive_no_new = 0
+            while executed_count < target_count and scroll_attempts < 25:
                 articles = page.locator('article[data-testid="tweet"]')
                 total_articles = await articles.count()
+                prev_seen_count = len(seen_tweet_ids)
 
                 for idx in range(total_articles):
                     if executed_count >= target_count:
@@ -641,7 +675,7 @@ async def run_hunter(
 
                     try:
                         await tweet_el.scroll_into_view_if_needed()
-                        await asyncio.sleep(1.0)
+                        await asyncio.sleep(0.5)
                     except Exception:
                         pass
 
@@ -664,10 +698,19 @@ async def run_hunter(
                         # Bebas jeda antar tweet - langsung lanjut ke tweet berikutnya tanpa delay
                         pass
 
+                if len(seen_tweet_ids) == prev_seen_count:
+                    consecutive_no_new += 1
+                else:
+                    consecutive_no_new = 0
+
+                if consecutive_no_new >= 4:
+                    print(f"{YELLOW}↪️  Stream ini sudah mencapai batas tweet baru, beralih ke stream berikutnya...{RESET}")
+                    break
+
                 if executed_count < target_count:
-                    print(f"{YELLOW}⬇️  Scroll ke bawah untuk mencari tweet 12 jam terakhir...{RESET}")
-                    await page.evaluate("window.scrollBy(0, window.innerHeight * 2);")
-                    await asyncio.sleep(4)
+                    print(f"{YELLOW}⬇️  Scroll lebih dalam untuk menjelajahi postingan lainnya ({scroll_attempts + 1}/25)...{RESET}")
+                    await page.evaluate("window.scrollBy(0, window.innerHeight * 2.5);")
+                    await asyncio.sleep(2.5)
                     scroll_attempts += 1
 
         print(f"\n{CYAN}============================================================{RESET}")
