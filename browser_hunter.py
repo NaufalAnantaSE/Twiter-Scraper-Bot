@@ -182,7 +182,7 @@ async def execute_tweet_tasks(
                         pass
                     actions_done.append("Like ❤️")
                     print(f"   [1/4] ❤️  Like Tweet       : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                    await asyncio.sleep(random.uniform(0.8, 1.5))
+                    await asyncio.sleep(0.3)
                 elif await unlike_btn.count() > 0:
                     actions_done.append("Like ❤️ (Sudah liked)")
                     print(f"   [1/4] ❤️  Like Tweet       : {YELLOW}✓ Sudah di-like sebelumnya{RESET}")
@@ -197,7 +197,7 @@ async def execute_tweet_tasks(
                             pass
                         actions_done.append("Like ❤️")
                         print(f"   [1/4] ❤️  Like Tweet       : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                        await asyncio.sleep(random.uniform(0.8, 1.5))
+                        await asyncio.sleep(0.3)
                     else:
                         print(f"   [1/4] ❤️  Like Tweet       : {YELLOW}- Tombol like tidak ditemukan{RESET}")
         except Exception as e:
@@ -229,7 +229,7 @@ async def execute_tweet_tasks(
                         await confirm_btn.click(force=True)
                         actions_done.append("Retweet 🔁")
                         print(f"   [2/4] 🔁 Retweet          : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                        await asyncio.sleep(random.uniform(1.0, 1.8))
+                        await asyncio.sleep(0.3)
                     except Exception:
                         print(f"   [2/4] 🔁 Retweet          : {YELLOW}- Konfirmasi repost tidak muncul{RESET}")
                     await tweet_page.keyboard.press("Escape")
@@ -248,7 +248,7 @@ async def execute_tweet_tasks(
                             await c_btn.click(force=True)
                             actions_done.append("Retweet 🔁")
                             print(f"   [2/4] 🔁 Retweet          : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                            await asyncio.sleep(random.uniform(1.0, 1.8))
+                            await asyncio.sleep(0.3)
                         except Exception:
                             pass
                         await tweet_page.keyboard.press("Escape")
@@ -365,7 +365,7 @@ async def execute_tweet_tasks(
 
                         actions_done.append(f"Drop {target_network} ({target_wallet[:6]}...{target_wallet[-4:]}) 👛")
                         print(f"   [3/4] 👛 Drop Address     : {GREEN}✓ Berhasil terkirim ke X! ({target_network}: {target_wallet[:6]}...){RESET}")
-                        await asyncio.sleep(random.uniform(0.8, 1.8))
+                        await asyncio.sleep(0.3)
                     else:
                         print(f"   [3/4] 👛 Drop Address     : {RED}✗ Input box balasan tidak ditemukan{RESET}")
             except Exception as e:
@@ -397,7 +397,7 @@ async def execute_tweet_tasks(
                     await follow_btn.click(force=True)
                     actions_done.append(f"Follow @{target_user} 👤")
                     print(f"   [4/4] 👤 Follow @{target_user}  : {GREEN}✓ Berhasil follow (Tweet Page){RESET}")
-                    await asyncio.sleep(random.uniform(0.8, 1.5))
+                    await asyncio.sleep(0.3)
                 elif await unfollow_btn.count() > 0 and await unfollow_btn.is_visible():
                     actions_done.append(f"Follow @{target_user} (Sudah followed)")
                     print(f"   [4/4] 👤 Follow @{target_user}  : {YELLOW}✓ Sudah di-follow sebelumnya{RESET}")
@@ -417,7 +417,7 @@ async def execute_tweet_tasks(
                             await p_follow.click(force=True)
                             actions_done.append(f"Follow @{target_user} 👤")
                             print(f"   [4/4] 👤 Follow @{target_user}  : {GREEN}✓ Berhasil follow (Author Profile){RESET}")
-                            await asyncio.sleep(random.uniform(0.8, 1.5))
+                            await asyncio.sleep(0.3)
                         elif await p_unfollow.count() > 0:
                             actions_done.append(f"Follow @{target_user} (Sudah followed)")
                             print(f"   [4/4] 👤 Follow @{target_user}  : {YELLOW}✓ Sudah di-follow sebelumnya{RESET}")
@@ -661,8 +661,8 @@ async def run_hunter(
                         print(f"{YELLOW}- Tidak ada aksi yang berhasil dikerjakan.{RESET}")
 
                     if executed_count < target_count:
-                        cooldown_sec = random.randint(8, 14)
-                        await clean_cooldown(cooldown_sec, "Jeda alami antar tweet")
+                        # Bebas jeda antar tweet - langsung lanjut ke tweet berikutnya tanpa delay
+                        pass
 
                 if executed_count < target_count:
                     print(f"{YELLOW}⬇️  Scroll ke bawah untuk mencari tweet 12 jam terakhir...{RESET}")

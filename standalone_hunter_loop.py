@@ -118,17 +118,23 @@ async def sequential_giveaway_loop(
                 pass
 
         # Selesai satu ronde untuk semua akun
-        round_sleep_sec = random.randint(round_delay_min_minutes * 60, round_delay_max_minutes * 60)
-        rem_m = round_sleep_sec // 60
-        rem_s = round_sleep_sec % 60
+        if round_delay_max_minutes <= 0:
+            print(f"\n{GREEN}{BOLD}════════════════════════════════════════════════════════════════{RESET}")
+            print(f"{GREEN}{BOLD}🎉 RONDE SIKLUS #{cycle} SELESAI UNTUK SEMUA AKUN!{RESET}")
+            print(f"📊 Total Keseluruhan Giveaway Terdaftar di Sistem: {BOLD}{total_entries}{RESET}")
+            print(f"🚀 Tanpa delay: Langsung tancap gas ke Ronde Siklus #{cycle + 1} (0 detik)...")
+            print(f"{GREEN}{BOLD}════════════════════════════════════════════════════════════════{RESET}\n")
+        else:
+            round_sleep_sec = random.randint(round_delay_min_minutes * 60, round_delay_max_minutes * 60)
+            rem_m = round_sleep_sec // 60
+            rem_s = round_sleep_sec % 60
+            print(f"\n{GREEN}{BOLD}════════════════════════════════════════════════════════════════{RESET}")
+            print(f"{GREEN}{BOLD}🎉 RONDE SIKLUS #{cycle} SELESAI UNTUK SEMUA AKUN!{RESET}")
+            print(f"📊 Total Keseluruhan Giveaway Terdaftar di Sistem: {BOLD}{total_entries}{RESET}")
+            print(f"⏱️ Istirahat antar ronde: {rem_m} menit {rem_s} detik sebelum Siklus #{cycle + 1}...")
+            print(f"{GREEN}{BOLD}════════════════════════════════════════════════════════════════{RESET}\n")
+            await asyncio.sleep(round_sleep_sec)
 
-        print(f"\n{GREEN}{BOLD}════════════════════════════════════════════════════════════════{RESET}")
-        print(f"{GREEN}{BOLD}🎉 RONDE SIKLUS #{cycle} SELESAI UNTUK SEMUA AKUN!{RESET}")
-        print(f"📊 Total Keseluruhan Giveaway Terdaftar di Sistem: {BOLD}{total_entries}{RESET}")
-        print(f"⏱️ Istirahat antar ronde: {rem_m} menit {rem_s} detik sebelum Siklus #{cycle + 1}...")
-        print(f"{GREEN}{BOLD}════════════════════════════════════════════════════════════════{RESET}\n")
-
-        await asyncio.sleep(round_sleep_sec)
         cycle += 1
 
 if __name__ == "__main__":
@@ -137,8 +143,8 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--category", choices=["ALL", "EVM", "SOLANA", "all", "evm", "solana"], default="ALL", help="Kategori (ALL, EVM, SOLANA)")
     parser.add_argument("-m", "--max", type=int, default=5, help="Jumlah tweet target per akun per ronde (default: 5)")
     parser.add_argument("--hours", type=float, default=12.0, help="Batas usia tweet maksimal dalam jam (default: 12.0)")
-    parser.add_argument("--min-delay", type=int, default=10, help="Jeda minimal antar ronde dalam menit (default: 10)")
-    parser.add_argument("--max-delay", type=int, default=20, help="Jeda maksimal antar ronde dalam menit (default: 20)")
+    parser.add_argument("--min-delay", type=int, default=0, help="Jeda minimal antar ronde dalam menit (default: 0)")
+    parser.add_argument("--max-delay", type=int, default=0, help="Jeda maksimal antar ronde dalam menit (default: 0)")
     parser.add_argument("--visible", action="store_true", help="Tampilkan jendela browser (default: headless)")
 
     args = parser.parse_args()
