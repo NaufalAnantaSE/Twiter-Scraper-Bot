@@ -140,6 +140,12 @@ async def execute_tweet_tasks(
             like_btn = main_tweet.locator('[data-testid="like"]').first
             unlike_btn = main_tweet.locator('[data-testid="unlike"]').first
 
+            # Scroll ke tweet agar tombol Like/RT/Reply ter-render di viewport
+            try:
+                await main_tweet.scroll_into_view_if_needed()
+            except Exception:
+                await tweet_page.evaluate("window.scrollBy(0, 200);")
+
             # Tunggu elemen Like atau Unlike siap di DOM
             for _ in range(8):
                 if (await like_btn.count() > 0 and await like_btn.is_visible()) or (await unlike_btn.count() > 0 and await unlike_btn.is_visible()):
@@ -212,57 +218,34 @@ async def execute_tweet_tasks(
                 actions_done.append("Retweet 🔁 (Sudah RT)")
                 print(f"   [2/4] 🔁 Retweet          : {YELLOW}✓ Sudah di-RT sebelumnya{RESET}")
             else:
-                print(f"   [2/4] 🔁 Retweet          : {YELLOW}- Tombol retweet tidak ditemukan{RESET}")
+                # Coba cari tombol retweet di halaman
+                page_rt = tweet_page.locator('[data-testid="retweet"]').first
+                page_unrt = tweet_page.locator('[data-testid="unretweet"]').first
+                if await page_rt.count() > 0 and await page_rt.is_visible():
+                    await page_rt.scroll_into_view_if_needed()
+                    await page_rt.click(force=True)
+                    await asyncio.sleep(1.2)
+                    c_btn = tweet_page.locator('[data-testid="retweetConfirm"], [role="menuitem"]:has-text("Repost")').first
+                    if await c_btn.count() > 0 and await c_btn.is_visible():
+                        await c_btn.click(force=True)
+                        actions_done.append("Retweet 🔁")
+                        print(f"   [2/4] 🔁 Retweet          : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
+                        await asyncio.sleep(random.uniform(1.5, 2.5))
+                    await tweet_page.keyboard.press("Escape")
+                elif await page_unrt.count() > 0:
+                    actions_done.append("Retweet 🔁 (Sudah RT)")
+                    print(f"   [2/4] 🔁 Retweet          : {YELLOW}✓ Sudah di-RT sebelumnya{RESET}")
+                else:
+                    print(f"   [2/4] 🔁 Retweet          : {YELLOW}- Tombol retweet tidak ditemukan{RESET}")
         except Exception as e:
             print(f"   [2/4] 🔁 Retweet          : {RED}✗ Error ({e}){RESET}")
             await tweet_page.keyboard.press("Escape")
 
         # ======================================================================
-        # TASK 3: FOLLOW 👤 (Follow author)
-        # ======================================================================
-        try:
-            # Cari tombol follow di halaman status tweet (sidebar "Relevant people" atau header tweet)
-            follow_btn = tweet_page.locator(f'button[aria-label*="Follow @{author}" i], button[data-testid$="-follow"]').first
-            unfollow_btn = tweet_page.locator(f'button[aria-label*="Following @{author}" i], button[data-testid$="-unfollow"]').first
-
-            if await follow_btn.count() > 0 and await follow_btn.is_visible():
-                await follow_btn.click(force=True)
-                actions_done.append(f"Follow @{author} 👤")
-                print(f"   [3/4] 👤 Follow @{author}  : {GREEN}✓ Berhasil follow (Status Page){RESET}")
-                await asyncio.sleep(random.uniform(1.2, 2.2))
-            elif await unfollow_btn.count() > 0 and await unfollow_btn.is_visible():
-                actions_done.append(f"Follow @{author} (Sudah followed)")
-                print(f"   [3/4] 👤 Follow @{author}  : {YELLOW}✓ Sudah di-follow sebelumnya{RESET}")
-            else:
-                # Fallback Pasti: Buka profil author https://x.com/{author}
-                try:
-                    await tweet_page.goto(f"https://x.com/{author}", wait_until="domcontentloaded", timeout=20000)
-                    await asyncio.sleep(2.5)
-                    p_follow = tweet_page.locator('button[data-testid$="-follow"]').first
-                    p_unfollow = tweet_page.locator('button[data-testid$="-unfollow"]').first
-                    if await p_follow.count() > 0 and await p_follow.is_visible():
-                        await p_follow.click(force=True)
-                        actions_done.append(f"Follow @{author} 👤")
-                        print(f"   [3/4] 👤 Follow @{author}  : {GREEN}✓ Berhasil follow (Author Profile){RESET}")
-                        await asyncio.sleep(random.uniform(1.2, 2.0))
-                    elif await p_unfollow.count() > 0:
-                        actions_done.append(f"Follow @{author} (Sudah followed)")
-                        print(f"   [3/4] 👤 Follow @{author}  : {YELLOW}✓ Sudah di-follow sebelumnya{RESET}")
-                    else:
-                        print(f"   [3/4] 👤 Follow @{author}  : {YELLOW}- Tombol follow tidak ditemukan di profil{RESET}")
-                    # Kembali ke halaman tweet untuk menyelesaikan drop address
-                    await tweet_page.goto(tweet_url, wait_until="domcontentloaded", timeout=20000)
-                    await asyncio.sleep(2.5)
-                except Exception as ex_p:
-                    print(f"   [3/4] 👤 Follow @{author}  : {RED}✗ Error profil ({ex_p}){RESET}")
-        except Exception as e:
-            print(f"   [3/4] 👤 Follow @{author}  : {RED}✗ Error ({e}){RESET}")
-
-        # ======================================================================
-        # TASK 4: DROP ADDRESS 👛 (Reply - 100% PURE WALLET ADDRESS ONLY)
+        # TASK 3: DROP ADDRESS 👛 (Reply - 100% PURE WALLET ADDRESS ONLY)
         # ======================================================================
         if not target_wallet:
-            print(f"   [4/4] 👛 Drop Address     : {RED}✗ Alamat {target_network} kosong di wallets.json!{RESET}")
+            print(f"   [3/4] 👛 Drop Address     : {RED}✗ Alamat {target_network} kosong di wallets.json!{RESET}")
         else:
             try:
                 # Tutup dialog / banner pengganggu jika ada
@@ -282,8 +265,14 @@ async def execute_tweet_tasks(
                     await r_icon.click(force=True)
                     await asyncio.sleep(1.5)
                 else:
-                    await tweet_page.evaluate("window.scrollBy(0, 700);")
-                    await asyncio.sleep(1.5)
+                    page_reply = tweet_page.locator('[data-testid="reply"]').first
+                    if await page_reply.count() > 0 and await page_reply.is_visible():
+                        await page_reply.scroll_into_view_if_needed()
+                        await page_reply.click(force=True)
+                        await asyncio.sleep(1.5)
+                    else:
+                        await tweet_page.evaluate("window.scrollBy(0, 400);")
+                        await asyncio.sleep(1.5)
 
                 reply_textarea = tweet_page.locator('[data-testid="tweetTextarea_0"]').first
                 if await reply_textarea.count() > 0:
@@ -326,12 +315,58 @@ async def execute_tweet_tasks(
                         pass
 
                     actions_done.append(f"Drop {target_network} ({target_wallet[:6]}...{target_wallet[-4:]}) 👛")
-                    print(f"   [4/4] 👛 Drop Address     : {GREEN}✓ Berhasil terkirim ke X! ({target_network}: {target_wallet[:6]}...){RESET}")
+                    print(f"   [3/4] 👛 Drop Address     : {GREEN}✓ Berhasil terkirim ke X! ({target_network}: {target_wallet[:6]}...){RESET}")
                     await asyncio.sleep(random.uniform(1.5, 3.0))
                 else:
-                    print(f"   [4/4] 👛 Drop Address     : {RED}✗ Input box balasan tidak ditemukan{RESET}")
+                    print(f"   [3/4] 👛 Drop Address     : {RED}✗ Input box balasan tidak ditemukan{RESET}")
             except Exception as e:
-                print(f"   [4/4] 👛 Drop Address     : {RED}✗ Error saat reply ({e}){RESET}")
+                print(f"   [3/4] 👛 Drop Address     : {RED}✗ Error saat reply ({e}){RESET}")
+
+        # ======================================================================
+        # TASK 4: FOLLOW 👤 (Follow author)
+        # ======================================================================
+        try:
+            # Cari tombol follow di halaman status tweet (sidebar "Relevant people" atau header tweet)
+            follow_btn = tweet_page.locator(f'button[aria-label*="Follow @{author}" i], button[data-testid$="-follow"]').first
+            unfollow_btn = tweet_page.locator(f'button[aria-label*="Following @{author}" i], button[data-testid$="-unfollow"]').first
+
+            if await follow_btn.count() > 0 and await follow_btn.is_visible():
+                await follow_btn.click(force=True)
+                actions_done.append(f"Follow @{author} 👤")
+                print(f"   [4/4] 👤 Follow @{author}  : {GREEN}✓ Berhasil follow (Status Page){RESET}")
+                await asyncio.sleep(random.uniform(1.2, 2.2))
+            elif await unfollow_btn.count() > 0 and await unfollow_btn.is_visible():
+                actions_done.append(f"Follow @{author} (Sudah followed)")
+                print(f"   [4/4] 👤 Follow @{author}  : {YELLOW}✓ Sudah di-follow sebelumnya{RESET}")
+            else:
+                # Fallback Pasti: Buka tab terisolasi ke profil author https://x.com/{author}
+                f_page = None
+                try:
+                    f_page = await context.new_page()
+                    await f_page.goto(f"https://x.com/{author}", wait_until="domcontentloaded", timeout=20000)
+                    await asyncio.sleep(2.5)
+                    p_follow = f_page.locator('button[data-testid$="-follow"]').first
+                    p_unfollow = f_page.locator('button[data-testid$="-unfollow"]').first
+                    if await p_follow.count() > 0 and await p_follow.is_visible():
+                        await p_follow.click(force=True)
+                        actions_done.append(f"Follow @{author} 👤")
+                        print(f"   [4/4] 👤 Follow @{author}  : {GREEN}✓ Berhasil follow (Author Profile){RESET}")
+                        await asyncio.sleep(random.uniform(1.2, 2.0))
+                    elif await p_unfollow.count() > 0:
+                        actions_done.append(f"Follow @{author} (Sudah followed)")
+                        print(f"   [4/4] 👤 Follow @{author}  : {YELLOW}✓ Sudah di-follow sebelumnya{RESET}")
+                    else:
+                        print(f"   [4/4] 👤 Follow @{author}  : {YELLOW}- Tombol follow tidak ditemukan di profil{RESET}")
+                except Exception as ex_p:
+                    print(f"   [4/4] 👤 Follow @{author}  : {RED}✗ Error profil ({ex_p}){RESET}")
+                finally:
+                    if f_page:
+                        try:
+                            await f_page.close()
+                        except Exception:
+                            pass
+        except Exception as e:
+            print(f"   [4/4] 👤 Follow @{author}  : {RED}✗ Error ({e}){RESET}")
 
     except Exception as e:
         print(f"   ⚠️ Kendala eksekusi tweet: {e}")
