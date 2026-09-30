@@ -67,7 +67,10 @@ def load_unfollowed_history() -> dict:
         return {}
     try:
         with open(UNFOLLOW_HISTORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            if isinstance(data, dict):
+                return data
+            return {}
     except Exception:
         return {}
 
