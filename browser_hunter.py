@@ -138,8 +138,17 @@ async def execute_tweet_tasks(
                 pass
 
         main_tweet = tweet_page.locator('article[data-testid="tweet"]').first
+        if await main_tweet.count() == 0:
+            main_tweet = tweet_page.locator('article').first
+
+        # Cek apakah tweet sudah dihapus atau tidak tersedia lagi di X
         try:
-            await main_tweet.wait_for(state="visible", timeout=20000)
+            del_el = tweet_page.locator('text="This Post is unavailable", text="This Post was deleted", text="Hmm...this page doesn’t exist", text="Post unavailable"').first
+            if (await del_el.count() > 0 and await del_el.is_visible()) or await main_tweet.count() == 0:
+                await asyncio.sleep(2.0)
+                if await main_tweet.count() == 0:
+                    print(f"   ⚠️ Tweet ini sudah dihapus oleh pembuatnya atau tidak tersedia (Post Unavailable), dilewati.")
+                    return False
         except Exception:
             pass
 
@@ -268,34 +277,42 @@ async def execute_tweet_tasks(
                     except Exception:
                         pass
 
-                # 1. Cek apakah textarea balasan sudah aktif/terbuka di halaman
-                active_textarea = None
-                dialog_ta = tweet_page.locator('[role="dialog"] [data-testid="tweetTextarea_0"]').first
-                inline_ta = tweet_page.locator('[data-testid="tweetTextarea_0"]').first
-                generic_ta = tweet_page.locator('div[contenteditable="true"][role="textbox"]').first
+                # Cek apakah pembuat tweet membatasi/menonaktifkan kolom komentar
+                restricted_el = tweet_page.locator('text="Who can reply?", text="can reply", [aria-label*="cannot reply" i]').first
+                if await restricted_el.count() > 0 and await restricted_el.is_visible():
+                    print(f"   [3/4] 👛 Drop Address     : {YELLOW}⚠️ Pembuat tweet membatasi/menutup komentar (Replies restricted){RESET}")
+                else:
+                    # 1. Cek apakah textarea balasan sudah aktif/terbuka di halaman
+                    active_textarea = None
+                    dialog_ta = tweet_page.locator('[role="dialog"] [data-testid="tweetTextarea_0"]').first
+                    inline_ta = tweet_page.locator('[data-testid="tweetTextarea_0"]').first
+                    generic_ta = tweet_page.locator('div[contenteditable="true"][role="textbox"]').first
 
-                if await dialog_ta.count() > 0 and await dialog_ta.is_visible():
-                    active_textarea = dialog_ta
-                elif await inline_ta.count() > 0 and await inline_ta.is_visible():
-                    active_textarea = inline_ta
-                elif await generic_ta.count() > 0 and await generic_ta.is_visible():
-                    active_textarea = generic_ta
+                    if await dialog_ta.count() > 0 and await dialog_ta.is_visible():
+                        active_textarea = dialog_ta
+                    elif await inline_ta.count() > 0 and await inline_ta.is_visible():
+                        active_textarea = inline_ta
+                    elif await generic_ta.count() > 0 and await generic_ta.is_visible():
+                        active_textarea = generic_ta
 
-                # Jika belum terbuka, picu dengan klik icon reply atau placeholder label
-                if not active_textarea:
-                    r_icon = tweet_page.locator('article[data-testid="tweet"] [data-testid="reply"], [data-testid="reply"]').first
-                    if await r_icon.count() > 0 and await r_icon.is_visible():
-                        await r_icon.scroll_into_view_if_needed()
-                        await r_icon.click(force=True)
-                        await asyncio.sleep(1.2)
-                    else:
-                        placeholder_label = tweet_page.locator('[data-testid="tweetTextarea_0_label"], div:has-text("Post your reply")').first
-                        if await placeholder_label.count() > 0 and await placeholder_label.is_visible():
-                            await placeholder_label.click(force=True)
-                            await asyncio.sleep(1.0)
+                    # Jika belum terbuka, picu dengan klik icon reply pada tweet atau placeholder label
+                    if not active_textarea:
+                        r_icon = main_tweet.locator('[data-testid="reply"]').first
+                        if await r_icon.count() == 0 or not await r_icon.is_visible():
+                            r_icon = tweet_page.locator('[data-testid="reply"]').first
+
+                        if await r_icon.count() > 0 and await r_icon.is_visible():
+                            await r_icon.scroll_into_view_if_needed()
+                            await r_icon.click(force=True)
+                            await asyncio.sleep(1.2)
                         else:
-                            await tweet_page.evaluate("window.scrollBy(0, 300);")
-                            await asyncio.sleep(1.0)
+                            placeholder_label = tweet_page.locator('[data-testid="tweetTextarea_0_label"], div:has-text("Post your reply")').first
+                            if await placeholder_label.count() > 0 and await placeholder_label.is_visible():
+                                await placeholder_label.click(force=True)
+                                await asyncio.sleep(1.0)
+                            else:
+                                await tweet_page.evaluate("window.scrollBy(0, 300);")
+                                await asyncio.sleep(1.0)
 
                     # Cari ulang setelah dipicu
                     if await dialog_ta.count() > 0 and await dialog_ta.is_visible():
