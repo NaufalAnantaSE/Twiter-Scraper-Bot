@@ -665,16 +665,17 @@ async def run_multi_account_yapping(
         print(f"{RED}Tidak ada akun di accounts.json!{RESET}")
         return
 
-    # Filter akun aktif (skip suspended)
+    # Filter akun aktif (skip suspended & cooldown)
     if target_account:
         clean_target = target_account.lstrip("@").lower()
         active_keys = [
             k for k, v in accounts.items()
             if (k.lower() == clean_target or v.get("screen_name", "").lower() == clean_target)
             and not v.get("suspended")
+            and not v.get("cooldown")
         ]
     else:
-        active_keys = [k for k, v in accounts.items() if not v.get("suspended")]
+        active_keys = [k for k, v in accounts.items() if not v.get("suspended") and not v.get("cooldown")]
 
     total = len(active_keys)
     print(f"""{CYAN}{BOLD}

@@ -94,47 +94,63 @@ Isi cookie `auth_token` dan `ct0` dari browser (melalui *Inspect Element ➔ App
 ## 🚀 Cara Menjalankan Bot
 
 ### 📌 1. Menjalankan Master Bot Crypto (Rekomendasi Utama)
-Menjalankan posting mandiri (delay 1-2 jam) dan viral engagement 5x batch (delay 30-60 menit) secara otomatis dan bergantian:
+Menjalankan posting mandiri (delay 1-2 jam) dan viral engagement 2x batch (delay 30-60 menit) secara otomatis dan bergantian:
 ```bash
+# Jalankan untuk semua akun aktif:
 python master_crypto_bot.py
+
+# Jalankan khusus 1 akun tertentu (contoh: fannettt):
+python master_crypto_bot.py -a fannettt
 ```
 *Opsi tambahan:*
-- `--yapping-min 60 --yapping-max 120`: Mengatur rentang jeda posting mandiri (dalam menit).
+- `-a, --account <nama_akun>`: Target hanya 1 akun tertentu.
+- `--post-min 60 --post-max 120`: Mengatur rentang jeda posting mandiri (dalam menit).
 - `--viral-min 30 --viral-max 60`: Mengatur rentang jeda viral engagement (dalam menit).
-- `--viral-count 5`: Jumlah tweet viral per batch per akun.
+- `--viral-count 2`: Jumlah tweet viral per batch per akun (default: 2, aman dari spam limit).
 - `--visible`: Menampilkan jendela browser Chrome.
 
 ---
 
 ### 📌 2. Menjalankan Engine Secara Terpisah (CLI Standalone)
 
-#### A. Postingan Yapping Crypto Mandiri:
+#### A. Giveaway Hunter (Drop Address EVM & Solana):
+```bash
+# Jalankan untuk akun tertentu dengan jangkauan 24 jam terakhir:
+python browser_hunter.py -a fannettt -c all -m 5 --hours 24
+
+# Pilihan kategori: -c all | -c solana | -c evm | -c usdt | -c base | -c sui
+```
+
+#### B. Postingan Yapping Crypto Mandiri:
 ```bash
 # 1x postingan ke seluruh akun aktif:
 python crypto_yapper.py
 
+# Khusus 1 akun tertentu:
+python crypto_yapper.py -a fannettt
+
 # Looping terjadwal mandiri dengan jeda 60 - 120 menit:
 python crypto_yapper.py --loop --interval-min 60 --interval-max 120
+```
+
+#### C. Viral Crypto & Airdrop Engagement:
+```bash
+# 2 tweet viral per akun (Like + RT + Komen kontekstual):
+python viral_crypto_engager.py -n 2
 
 # Khusus 1 akun tertentu:
-python crypto_yapper.py -a screen_name
-```
-
-#### B. Viral Crypto & Airdrop Engagement:
-```bash
-# 5 tweet viral per akun (Like + RT + Komen kontekstual):
-python viral_crypto_engager.py -n 5
+python viral_crypto_engager.py -a fannettt -n 2
 
 # Mode looping mandiri:
-python viral_crypto_engager.py --loop -n 5 --interval-min 30 --interval-max 60
+python viral_crypto_engager.py --loop -n 2 --interval-min 30 --interval-max 60
 ```
 
-#### C. Cek Status Kesehatan Semua Akun:
+#### D. Cek Status Kesehatan Semua Akun:
 ```bash
 python check_all_accounts_status.py
 ```
 
-#### D. Unfollow Massal Semua Akun (Reset ke 0 Following):
+#### E. Unfollow Massal Semua Akun (Reset ke 0 Following):
 ```bash
 python multi_account_unfollow.py
 ```

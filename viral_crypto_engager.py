@@ -650,7 +650,7 @@ async def run_account_engagement(
 
     stats = {"account": uname, "engaged": 0, "status": "SUCCESS"}
 
-    if not auth_token or not ct0 or account_info.get("suspended"):
+    if not auth_token or not ct0 or account_info.get("suspended") or account_info.get("cooldown"):
         stats["status"] = "SKIPPED"
         return stats
 
@@ -744,9 +744,10 @@ async def run_multi_account_engagement(
             k for k, v in accounts.items()
             if (k.lower() == clean_target or v.get("screen_name", "").lower() == clean_target)
             and not v.get("suspended")
+            and not v.get("cooldown")
         ]
     else:
-        active_keys = [k for k, v in accounts.items() if not v.get("suspended")]
+        active_keys = [k for k, v in accounts.items() if not v.get("suspended") and not v.get("cooldown")]
 
     total = len(active_keys)
     print(f"""{CYAN}{BOLD}

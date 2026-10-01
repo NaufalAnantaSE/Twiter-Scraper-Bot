@@ -50,6 +50,7 @@ browser_lock = asyncio.Lock()
 
 
 async def engine_original_yapper(
+    target_account: str = "",
     post_interval_min: int = 60,
     post_interval_max: int = 120,
     headless: bool = True
@@ -60,12 +61,13 @@ async def engine_original_yapper(
     - Delay 1 - 2 Jam (60 - 120 menit)
     """
     cycle = 1
+    target_label = f" (Akun: @{target_account.lstrip('@')})" if target_account else " (Semua Akun Aktif)"
     while True:
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"\n{MAGENTA}{BOLD}╔═══════════════════════════════════════════════════════════════╗")
         print(f"║ 📢 [ENGINE 1] MEMULAI SIKLUS POSTINGAN MANDIRI #{cycle:<4}       ║")
         print(f"║ ⏰ Waktu Mulai : {now_str:<44} ║")
-        print(f"║ 🎯 Target      : 1x Postingan Tweet Yapping per Akun          ║")
+        print(f"║ 🎯 Target      : 1x Postingan Tweet Yapping per Akun{target_label:<14} ║")
         print(f"╚═══════════════════════════════════════════════════════════════╝{RESET}", flush=True)
 
         async with browser_lock:
@@ -74,6 +76,7 @@ async def engine_original_yapper(
                     tweets_per_account=1,
                     lang="mixed",
                     delay_between_accounts=12.0,
+                    target_account=target_account,
                     headless=headless
                 )
             except Exception as e:
@@ -90,27 +93,29 @@ async def engine_original_yapper(
 
 
 async def engine_viral_engager(
-    viral_count: int = 5,
+    target_account: str = "",
+    viral_count: int = 2,
     viral_interval_min: int = 30,
     viral_interval_max: int = 60,
     headless: bool = True
 ):
     """
     ENGINE 2: Viral Engagement
-    - 5x postingan viral per batch per akun
+    - 2x postingan viral per batch per akun
     - Like ❤️, Retweet 🔁, Komen Kontekstual 💬 (Tanpa Follow & Tanpa Wallet Drop)
     - Delay 30 - 60 Menit
     """
     cycle = 1
-    # Tunggu 30 detik saat awal agar tidak rebutan lock dengan Engine 1
+    # Tunggu 15 detik saat awal agar tidak rebutan lock dengan Engine 1
     await asyncio.sleep(15)
 
+    target_label = f" (Akun: @{target_account.lstrip('@')})" if target_account else " (Semua Akun Aktif)"
     while True:
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"\n{CYAN}{BOLD}╔═══════════════════════════════════════════════════════════════╗")
         print(f"║ 🔥 [ENGINE 2] MEMULAI SIKLUS VIRAL ENGAGEMENT #{cycle:<4}         ║")
         print(f"║ ⏰ Waktu Mulai : {now_str:<44} ║")
-        print(f"║ 🎯 Target      : {viral_count}x Tweet Viral per Akun (Like+RT+Komen)       ║")
+        print(f"║ 🎯 Target      : {viral_count}x Tweet Viral per Akun (Like+RT+Komen){target_label:<7} ║")
         print(f"╚═══════════════════════════════════════════════════════════════╝{RESET}", flush=True)
 
         async with browser_lock:
@@ -121,6 +126,7 @@ async def engine_viral_engager(
                     do_retweet=True,
                     do_comment=True,
                     delay_between_accounts=10.0,
+                    target_account=target_account,
                     headless=headless
                 )
             except Exception as e:
@@ -137,18 +143,21 @@ async def engine_viral_engager(
 
 
 async def main_master(
+    target_account: str = "",
     post_interval_min: int = 60,
     post_interval_max: int = 120,
-    viral_count: int = 5,
+    viral_count: int = 2,
     viral_interval_min: int = 30,
     viral_interval_max: int = 60,
     headless: bool = True
 ):
+    target_desc = f"@{target_account.lstrip('@')}" if target_account else "Semua Akun Aktif (Kecuali Cooldown/Suspended)"
     print(f"""{CYAN}{BOLD}
 ╔═══════════════════════════════════════════════════════════════╗
 ║         🚀 MASTER CRYPTO AUTONOMOUS BOT SYSTEM                ║
 ║   Dual Engine: Postingan Mandiri + Viral Crypto Engagement    ║
 ╚═══════════════════════════════════════════════════════════════╝{RESET}
+{BOLD}Target Akun:{RESET} {GREEN}{target_desc}{RESET}
 {BOLD}Konfigurasi Jadwal Otomatis:{RESET}
   • {MAGENTA}{BOLD}Engine 1 (Postingan Yapping Mandiri){RESET} : 1x Tweet / Akun
     - Jeda antar postingan               : {GREEN}{post_interval_min} - {post_interval_max} Menit (1 - 2 Jam){RESET}
@@ -163,11 +172,13 @@ async def main_master(
     # Jalankan kedua engine secara bersamaan (concurrent) dengan orkestrasi browser_lock
     await asyncio.gather(
         engine_original_yapper(
+            target_account=target_account,
             post_interval_min=post_interval_min,
             post_interval_max=post_interval_max,
             headless=headless
         ),
         engine_viral_engager(
+            target_account=target_account,
             viral_count=viral_count,
             viral_interval_min=viral_interval_min,
             viral_interval_max=viral_interval_max,
@@ -178,9 +189,10 @@ async def main_master(
 
 def main():
     parser = argparse.ArgumentParser(description="Master Autonomous Crypto Bot System")
+    parser.add_argument("-a", "--account", type=str, default="", help="Jalankan hanya untuk 1 akun tertentu (contoh: fannettt)")
     parser.add_argument("--post-min", type=int, default=60, help="Delay minimal postingan mandiri dalam menit (default: 60 = 1 jam)")
     parser.add_argument("--post-max", type=int, default=120, help="Delay maksimal postingan mandiri dalam menit (default: 120 = 2 jam)")
-    parser.add_argument("--viral-count", type=int, default=5, help="Jumlah tweet viral per batch (default: 5)")
+    parser.add_argument("--viral-count", type=int, default=2, help="Jumlah tweet viral per batch (default: 2, aman dari spam limit)")
     parser.add_argument("--viral-min", type=int, default=30, help="Delay minimal batch viral dalam menit (default: 30)")
     parser.add_argument("--viral-max", type=int, default=60, help="Delay maksimal batch viral dalam menit (default: 60)")
     parser.add_argument("--visible", action="store_true", help="Tampilkan browser Chrome")
@@ -189,6 +201,7 @@ def main():
 
     try:
         asyncio.run(main_master(
+            target_account=args.account,
             post_interval_min=args.post_min,
             post_interval_max=args.post_max,
             viral_count=args.viral_count,
