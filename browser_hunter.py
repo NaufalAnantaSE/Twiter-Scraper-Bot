@@ -16,7 +16,7 @@ if sys.platform == "win32":
 
 from config import COOKIES_FILE, RESULTS_DIR
 from wallet_config import load_wallet_config
-from airdrop_parser import analyze_airdrop_tweet
+from airdrop_parser import analyze_airdrop_tweet, is_genuine_giveaway_drop
 from airdrop_actions import is_already_entered, record_entry
 
 CYAN = "\033[96m"
@@ -70,6 +70,11 @@ async def execute_tweet_tasks(
     4. Drop Address 👛 (100% Pure Address di textarea dengan verifikasi pengiriman)
     """
     actions_done = []
+    is_valid, reason = is_genuine_giveaway_drop(tweet_text)
+    if not is_valid:
+        print(f"   [!] Dibatalkan: {reason}")
+        return False, []
+
     req = analyze_airdrop_tweet(tweet_text, author)
 
     # 1. Tentukan alamat wallet yang sesuai (EVM vs Solana)
@@ -264,7 +269,9 @@ async def execute_tweet_tasks(
         # ======================================================================
         # TASK 3: DROP ADDRESS 👛 (Reply - 100% PURE WALLET ADDRESS ONLY)
         # ======================================================================
-        if not target_wallet:
+        if not req.is_wallet_drop:
+            print(f"   [3/4] 👛 Drop Address     : {YELLOW}- Tweet tidak meminta drop wallet/address, reply dilewati{RESET}")
+        elif not target_wallet:
             print(f"   [3/4] 👛 Drop Address     : {RED}✗ Alamat {target_network} kosong di wallets.json!{RESET}")
         else:
             try:
@@ -667,6 +674,12 @@ async def run_hunter(
                     text_el = tweet_el.locator('[data-testid="tweetText"]').first
                     tweet_text = await text_el.inner_text() if await text_el.count() > 0 else ""
                     clean_preview = tweet_text.replace("\n", " ")[:110]
+
+                    # Validasi ketat giveaway / drop wallet asli
+                    is_valid, ga_reason = is_genuine_giveaway_drop(tweet_text)
+                    if not is_valid:
+                        print(f"[-] Skip @{author} ({ga_reason})")
+                        continue
 
                     print(f"\n{CYAN}============================================================{RESET}")
                     print(f"{BOLD}🎯 [{executed_count + 1}/{target_count}] Tweet dari @{author}{RESET}")

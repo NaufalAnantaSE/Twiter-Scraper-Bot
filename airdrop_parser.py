@@ -40,6 +40,51 @@ def parse_tag_count(text: str) -> int:
         return 3
     return 0
 
+def is_genuine_giveaway_drop(text: str) -> tuple[bool, str]:
+    """
+    Memvalidasi secara ketat apakah sebuah tweet benar-benar merupakan postingan
+    giveaway atau ajakan drop wallet yang sah.
+    Mencegah tweet diskusi umum, filosofis, opini, promosi token, atau anti-scam terdeteksi sebagai giveaway.
+    """
+    clean_text = text.strip()
+    if len(clean_text) < 15:
+        return False, "Teks terlalu pendek"
+
+    # 1. Negative guard: Tweet peringatan/anti-scam agar tidak direspons
+    anti_scam_pattern = r'\b(never|don\'?t|do\s+not|scam|warning|beware|hacked)\s+(drop|send|share|give)\s+(your\s+)?(wallet|address|seed|key|money)\b'
+    if re.search(anti_scam_pattern, clean_text, re.IGNORECASE):
+        return False, "Bukan giveaway (tweet peringatan scam)"
+
+    # 2. Pola ajakan drop wallet eksplisit
+    explicit_drop_patterns = [
+        (r'\b(drop|comment|leave|send|reply\s+with)\s+(your\s+)?([a-z0-9$]+\s+)?(address|addresses|wallet|wallets|addr|addrs|addy|addies|0x|sol|solana|eth|phantom|metamask)\b', "Drop Wallet Direct"),
+        (r'\b(drop\s+(your\s+)?(0x|sol|solana|eth|\$sol|\$eth|\$usdt|address|addresses|wallet|wallets|addy|addies))\b', "Drop Token/Chain"),
+        (r'\b(address|addresses|wallet|wallets|0x|sol|addy|addies)\s+(below|here|down\s+below|in\s+comments|in\s+the\s+comments)\b', "Wallet Location Below"),
+        (r'\bdrop\s+your\s+(evm|erc20|bep20|spl)\b', "Drop Chain Type"),
+        (r'\b(every\s+(wallet|address)\s+gets|first\s+\d+\s+(wallets|addresses))\b', "Batch Distribution"),
+        (r'\b(send\s+(some\s+)?(\$sol|\$eth|sol|eth))\s+to\s+(first|\d+|wallets|addresses)\b', "Sending Crypto Distribution"),
+        (r'\b(sending\s+some\s+(\$sol|\$eth|sol|eth))\b', "Sending Crypto"),
+        (r'\b(who\s+needs\s+(\$sol|\$eth|\$usdt))\b.*(drop|wallet|wallets|address)', "Who Needs Crypto Drop"),
+        (r'\b(dropping\s+(\$sol|\$eth|\$usdt|some\s+sol|some\s+eth))\b', "Dropping Crypto")
+    ]
+
+    for p, label in explicit_drop_patterns:
+        if re.search(p, clean_text, re.IGNORECASE):
+            return True, f"Valid ({label})"
+
+    # 3. Kombinasi kata Giveaway/Airdrop + Kata Kunci Dompet
+    giveaway_words = r'\b(giveaway|airdrop|giving\s+away|prize\s+pool|raffle)\b'
+    wallet_words = r'\b(wallet|address|addy|addr|0x|\$sol|\$eth|phantom|metamask|drop)\b'
+
+    has_giveaway = bool(re.search(giveaway_words, clean_text, re.IGNORECASE))
+    has_wallet = bool(re.search(wallet_words, clean_text, re.IGNORECASE))
+
+    if has_giveaway and has_wallet:
+        return True, "Valid (Giveaway + Wallet Keyword)"
+
+    return False, "Bukan giveaway / drop wallet (tidak ada pola drop address atau distribusi reward)"
+
+
 def analyze_airdrop_tweet(text: str, author_username: str = "") -> AirdropRequirements:
     """
     Menganalisis teks tweet dengan fokus utama pada Drop Address EVM / Solana.
@@ -51,8 +96,10 @@ def analyze_airdrop_tweet(text: str, author_username: str = "") -> AirdropRequir
     """
     clean_text = text.strip()
 
+    # Cek keabsahan giveaway secara ketat
+    is_valid_ga, _ = is_genuine_giveaway_drop(clean_text)
+
     # 1. Deteksi spesifik "Drop Address / Drop Wallet"
-    # Pola: kata kerja (drop/comment/leave/send) + kata benda (address/wallet/0x/sol/eth/addy)
     drop_patterns = [
         r'\b(drop|comment|leave|send|reply\s+with)\s+(your\s+)?(address|wallet|addr|addy|0x|sol|solana|eth|phantom|metamask)\b',
         r'\b(drop\s+(0x|sol|eth|address|wallet|addy))\b',
@@ -62,14 +109,14 @@ def analyze_airdrop_tweet(text: str, author_username: str = "") -> AirdropRequir
         r'\b(send\s+(some\s+)?(\$sol|\$eth|sol|eth))\b',
         r'\bdrop\s+(\$sol|\$eth|\$usdt)\b'
     ]
-    is_wallet_drop = any(re.search(p, clean_text, re.IGNORECASE) for p in drop_patterns)
+    is_wallet_drop = is_valid_ga and any(re.search(p, clean_text, re.IGNORECASE) for p in drop_patterns)
 
     # Deteksi umum giveaway
     giveaway_keywords = [
         r'\bgiveaway\b', r'\bairdrop\b', r'\bwhitelist\b', r'\bwl\s+spot\b',
         r'\bgiving\s+away\b', r'\bwinner\b', r'\bfree\s+mint\b', r'\bprize\s+pool\b'
     ]
-    is_giveaway = is_wallet_drop or any(re.search(kw, clean_text, re.IGNORECASE) for kw in giveaway_keywords)
+    is_giveaway = is_valid_ga and (is_wallet_drop or any(re.search(kw, clean_text, re.IGNORECASE) for kw in giveaway_keywords))
 
     # 2. Deteksi apakah host meminta HANYA alamat saja tanpa teks/komentar
     # (Banyak bot checker giveaway mendiskualifikasi pemenang jika ada teks selain alamat)
