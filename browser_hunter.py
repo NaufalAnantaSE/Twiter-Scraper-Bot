@@ -732,6 +732,8 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--category", choices=["all", "evm", "solana"], default="all", help="Kategori target (all, evm, solana)")
     parser.add_argument("-m", "--max", type=int, default=10, help="Jumlah maksimal tweet (default: 10)")
     parser.add_argument("--hours", type=float, default=24.0, help="Batas rentang usia tweet dalam jam (default: 24.0)")
+    parser.add_argument("--loop", action="store_true", help="Jalankan terus-menerus dalam siklus berkala")
+    parser.add_argument("--interval", type=int, default=15, help="Jeda tidur antar siklus dalam menit jika --loop (default: 15)")
     parser.add_argument("--visible", action="store_true", help="Tampilkan jendela browser (default: headless)")
 
     args = parser.parse_args()
@@ -752,14 +754,35 @@ if __name__ == "__main__":
             print(f"{RED}❌ Akun '{args.account}' tidak ditemukan di accounts.json!{RESET}")
             sys.exit(1)
 
+    async def main_loop():
+        cycle = 1
+        while True:
+            if args.loop:
+                print(f"\n{MAGENTA}{BOLD}================================================================{RESET}")
+                print(f"{MAGENTA}{BOLD}🚀 MEMULAI SIKLUS PERBURUAN GIVEAWAY #{cycle}{RESET}")
+                print(f"⏰ Waktu: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                print(f"{MAGENTA}{BOLD}================================================================{RESET}\n")
+
+            try:
+                await run_hunter(
+                    category=args.category,
+                    target_count=args.max,
+                    max_age_hours=args.hours,
+                    headless=not args.visible,
+                    account_info=account_data
+                )
+            except Exception as e:
+                print(f"{RED}❌ Kendala pada siklus perburuan #{cycle}: {e}{RESET}")
+
+            if not args.loop:
+                break
+
+            print(f"\n{CYAN}💤 Siklus #{cycle} selesai. Tidur selama {args.interval} menit sebelum siklus #{cycle + 1}...{RESET}\n")
+            cycle += 1
+            await asyncio.sleep(args.interval * 60)
+
     try:
-        asyncio.run(run_hunter(
-            category=args.category,
-            target_count=args.max,
-            max_age_hours=args.hours,
-            headless=not args.visible,
-            account_info=account_data
-        ))
+        asyncio.run(main_loop())
     except KeyboardInterrupt:
         print(f"\n{YELLOW}Dihentikan oleh pengguna.{RESET}")
         sys.exit(0)
