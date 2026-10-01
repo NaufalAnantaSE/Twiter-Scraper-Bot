@@ -780,9 +780,9 @@ if __name__ == "__main__":
     from accounts_manager import load_accounts, sync_active_cookies
 
     parser = argparse.ArgumentParser(description="Twitter Airdrop Browser Hunter")
-    parser.add_argument("-a", "--account", type=str, default="", help="Pilih akun tertentu dari accounts.json (misal: fannettt)")
+    parser.add_argument("-a", "--account", type=str, default="all", help="Pilih akun tertentu dari accounts.json (misal: fannettt, atau 'all' untuk semua akun aktif)")
     parser.add_argument("-c", "--category", choices=["all", "evm", "solana"], default="all", help="Kategori target (all, evm, solana)")
-    parser.add_argument("-m", "--max", type=int, default=10, help="Jumlah maksimal tweet (default: 10)")
+    parser.add_argument("-m", "--max", type=int, default=10, help="Jumlah maksimal tweet per akun per siklus (default: 10)")
     parser.add_argument("--hours", type=float, default=48.0, help="Batas rentang usia tweet dalam jam (default: 48.0 = 2 hari)")
     parser.add_argument("--delay-min", type=int, default=10, help="Delay minimal antar entri dalam detik (default: 10)")
     parser.add_argument("--delay-max", type=int, default=30, help="Delay maksimal antar entri dalam detik (default: 30)")
@@ -792,48 +792,76 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    account_data = None
-    if args.account:
-        data = load_accounts()
-        accs = data.get("accounts", {})
+    data = load_accounts()
+    accs = data.get("accounts", {})
+
+    target_accounts = []
+    if args.account and args.account.lower() != "all":
         clean_target = args.account.lstrip("@").lower()
         for k, v in accs.items():
             if k.lower() == clean_target or v.get("screen_name", "").lower() == clean_target:
-                account_data = v
+                target_accounts.append(v)
                 break
-        if account_data:
-            sync_active_cookies(account_data)
-            print(f"{GREEN}✓ Menjalankan perburuan giveaway khusus untuk akun: @{account_data.get('screen_name')}{RESET}")
-        else:
+        if not target_accounts:
             print(f"{RED}❌ Akun '{args.account}' tidak ditemukan di accounts.json!{RESET}")
             sys.exit(1)
+        print(f"{GREEN}✓ Menjalankan perburuan giveaway khusus untuk akun: @{target_accounts[0].get('screen_name')}{RESET}")
+    else:
+        # Ambil semua akun yang aktif dan memiliki token (tidak suspended)
+        for k, v in accs.items():
+            if not v.get("suspended") and v.get("auth_token") and v.get("ct0"):
+                target_accounts.append(v)
+
+        if not target_accounts:
+            print(f"{RED}❌ Tidak ada akun aktif yang ditemukan di accounts.json!{RESET}")
+            sys.exit(1)
+
+        print(f"\n{GREEN}{BOLD}✓ Menjalankan perburuan giveaway untuk SEMUA AKUN AKTIF ({len(target_accounts)} Akun):{RESET}")
+        for i, acc in enumerate(target_accounts, 1):
+            s_name = acc.get('screen_name', 'unknown')
+            evm_p = acc.get('evm_address', '')[:10] + '...' if acc.get('evm_address') else '[KOSONG]'
+            sol_p = acc.get('solana_address', '')[:10] + '...' if acc.get('solana_address') else '[KOSONG]'
+            print(f"  {i}. {CYAN}@{s_name:<14}{RESET} | EVM: {GREEN}{evm_p:<14}{RESET} | SOL: {GREEN}{sol_p}{RESET}")
 
     async def main_loop():
         cycle = 1
         while True:
             if args.loop:
                 print(f"\n{MAGENTA}{BOLD}================================================================{RESET}")
-                print(f"{MAGENTA}{BOLD}🚀 MEMULAI SIKLUS PERBURUAN GIVEAWAY #{cycle}{RESET}")
+                print(f"{MAGENTA}{BOLD}🚀 MEMULAI SIKLUS PERBURUAN GIVEAWAY #{cycle} ({len(target_accounts)} Akun){RESET}")
                 print(f"⏰ Waktu: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 print(f"{MAGENTA}{BOLD}================================================================{RESET}\n")
 
-            try:
-                await run_hunter(
-                    category=args.category,
-                    target_count=args.max,
-                    max_age_hours=args.hours,
-                    delay_min=args.delay_min,
-                    delay_max=args.delay_max,
-                    headless=not args.visible,
-                    account_info=account_data
-                )
-            except Exception as e:
-                print(f"{RED}❌ Kendala pada siklus perburuan #{cycle}: {e}{RESET}")
+            for acc_idx, acc_data in enumerate(target_accounts, 1):
+                acc_name = acc_data.get("screen_name", f"Akun-{acc_idx}")
+                print(f"\n{CYAN}{BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+                print(f"{CYAN}{BOLD}▶ [{acc_idx}/{len(target_accounts)}] Memproses Akun: @{acc_name}{RESET}")
+                print(f"{CYAN}{BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}\n")
+
+                sync_active_cookies(acc_data)
+
+                try:
+                    await run_hunter(
+                        category=args.category,
+                        target_count=args.max,
+                        max_age_hours=args.hours,
+                        delay_min=args.delay_min,
+                        delay_max=args.delay_max,
+                        headless=not args.visible,
+                        account_info=acc_data
+                    )
+                except Exception as e:
+                    print(f"{RED}❌ Kendala pada akun @{acc_name}: {e}{RESET}")
+
+                if acc_idx < len(target_accounts):
+                    acc_wait = random.randint(15, 25)
+                    print(f"\n{YELLOW}⏳ Jeda alami antar akun ({acc_wait} detik) sebelum beralih ke akun berikutnya...{RESET}\n")
+                    await asyncio.sleep(acc_wait)
 
             if not args.loop:
                 break
 
-            print(f"\n{CYAN}💤 Siklus #{cycle} selesai. Tidur selama {args.interval} menit sebelum siklus #{cycle + 1}...{RESET}\n")
+            print(f"\n{CYAN}💤 Siklus #{cycle} selesai untuk seluruh akun ({len(target_accounts)} akun). Tidur selama {args.interval} menit sebelum siklus #{cycle + 1}...{RESET}\n")
             cycle += 1
             await asyncio.sleep(args.interval * 60)
 
