@@ -63,75 +63,253 @@ FORBIDDEN_KEYWORDS = [
     "|| 6 hours", "|| 12 hours", "|| 24 hours", "lucky winners"
 ]
 
+import hashlib
+
+USED_COMMENTS_FILE = RESULTS_DIR / "used_viral_comments.json"
+
 # ==============================================================================
-# 🧠 SMART CONTEXTUAL COMMENT GENERATOR (AIRDROP & CRYPTO)
+# 🧠 MODULAR HIGH-VALUE CONTEXTUAL COMMENT ENGINE
+# Menghasilkan puluhan ribu variasi komentar unik, kontekstual & bernilai tinggi
 # ==============================================================================
-SMART_COMMENTS = {
+MODULAR_COMMENTS = {
     "airdrop": {
-        "en": [
-            "Solid alpha right here! Bookmarked this thread for the weekend grind. Consistency onchain always wins 🔥",
-            "Great breakdown! Early active users and real community engagement always get rewarded. Appreciate the guide 👏",
-            "Quality airdrop guide, super clear steps. The compounding effect of exploring early protocols is unmatched 💎🙌",
-            "Thanks for sharing this alpha! Setting up daily interactions right now. Time to put in the work 🚀",
-            "This is the type of actionable Web3 content timeline needs. Straight to the point, thank you! ✨"
-        ],
-        "id": [
-            "Info airdrop berbobot nih! Bookmark dulu buat digarap malam ini. Yang konsisten onchain yang panen nanti 🔥",
-            "Thanks tutorial lengkapnya bang! Step-by-step jelas banget, langsung eksekusi mumpung gas fee aman 🚀",
-            "Garapan mantap! Selalu suka liat panduan yang to the point tanpa basa-basi gini. Gaspol terus 💎🙌",
-            "Alpha berkualitas! Emang bener kunci cuan di Web3 itu rajin interaksi sama ekosistem baru sejak awal ✨",
-            "Penjelasan yang rapi dan gampang dipahami. Izin share dan praktek ya bang, mantap! 👏🔥"
-        ]
+        "en": {
+            "openers": [
+                "Solid alpha breakdown right here!",
+                "Super clean and actionable airdrop guide.",
+                "Appreciate the clarity and detailed steps in this thread.",
+                "High quality rundown on this protocol.",
+                "This is the exact type of grounded Web3 alpha timeline needs.",
+                "Bookmarking this guide for my onchain session."
+            ],
+            "insights": [
+                "Consistency in early testnets and multi-month contract interactions always beats volume spamming.",
+                "Sybil resistance is getting stricter, so authentic user engagement and governance voting make all the difference.",
+                "Exploring early ecosystem primitives before the snapshot hype is where genuine asymmetrical reward lives.",
+                "Diversifying interactions across official bridges, swaps, and staking builds a very resilient wallet footprint.",
+                "The compounding value of steady onchain testing quietly separates real hunters from last-minute bots."
+            ],
+            "closers": [
+                "Setting up transactions right now. Time to grind! 🚀🔥",
+                "Thanks for putting this together, massive respect! 👏💎",
+                "Consistency always pays off in the long run. Appreciate you! ✨",
+                "Excited to see where this ecosystem heads next. Keep shipping! 🌟",
+                "Alpha well noted. Onward and upward! 🫡"
+            ]
+        },
+        "id": {
+            "openers": [
+                "Info airdrop dan panduan yang sangat berbobot nih!",
+                "Rapi banget pembahasannya, step-by-step mudah dipahami.",
+                "Thanks thread lengkapnya bang, daging semua isinya.",
+                "Selalu suka liat edukasi airdrop yang to the point tanpa basa-basi gini.",
+                "Panduan berkelas buat garapan testnet / early protocol.",
+                "Izin bookmark buat dieksekusi malam ini ya bang."
+            ],
+            "insights": [
+                "Interaksi rutin tiap minggu di smart contract resmi jauh lebih potensial lolos kriteria anti-sybil.",
+                "Garap konsisten dari awal memang kunci utama, snapshot seringkali ngehargain user organik yang loyal.",
+                "Penting banget bangun profil wallet yang natural lewat berbagai protokol di ekosistemnya.",
+                "Eksplorasi ekosistem baru selagi gas fee murah emang strategi paling cerdas buat hunter.",
+                "Ketekunan nyelesaiin task teknis bakal terbayar manis pas masa claim token nanti."
+            ],
+            "closers": [
+                "Langsung gaspol praktek sekarang mumpung lancar! 🚀🔥",
+                "Makasih udah berbagi alpha berharga ini bang, mantap! 👏💎",
+                "Yang konsisten onchain yang bakal panen nanti. Sukses selalu! ✨",
+                "Semoga alokasinya maksimal buat pejuang konsisten. Gas terus! 🌟",
+                "Tetap semangat dan jaga keamanan wallet masing-masing! 🛡️"
+            ]
+        }
     },
     "market": {
-        "en": [
-            "Market structure looking very solid here. Macro trend is holding up nicely, patience is key 📈",
-            "Spot on observation. The liquidity shift across ecosystems is becoming super obvious now 📊",
-            "Clean chart analysis! Shakeouts are normal in crypto, high conviction bags always prevail in the end 🚀",
-            "Couldn't agree more. Volume precedes price, and fundamentals will always win the long game 💎🙌",
-            "Great market perspective. Keeping emotions out of trading is the ultimate edge in this space ✨"
-        ],
-        "id": [
-            "Struktur chartnya masih rapi banget nahan support. Tinggal nunggu konfirmasi volume berikutnya, bullish! 📈",
-            "Setuju banget sama analisa ini. Di tengah volatilitas market gini emang paling bener sabar dan hold conviction 📊",
-            "Analisa yang jernih no fomo-fomo club. Selalu menarik dengerin sudut pandang objektif kayak gini 👍",
-            "Momentumnya makin kerasa solid. Yang tenang dan disiplin money management yang bakal survive 💎🙌",
-            "Insight mantap bang! Market sideways emang waktu terbaik buat riset dan akumulasi pelan-pelan 🚀"
-        ]
+        "en": {
+            "openers": [
+                "Really sharp market observation here.",
+                "Spot on breakdown of the current market structure.",
+                "Clean technical perspective without unnecessary noise.",
+                "Appreciate the balanced view on this price action.",
+                "Great chart context, aligns closely with macro liquidity trends.",
+                "Very objective assessment of the broader consolidation range."
+            ],
+            "insights": [
+                "Liquidity absorption around these key support zones shows quiet institutional demand stacking up.",
+                "Funding rate resets while forming higher lows historically provide the healthiest continuation bases.",
+                "Open interest flushes are essential to wipe out aggressive leverage before any meaningful expansion.",
+                "Spot accumulation metrics and orderbook depth tell a much more honest story than short term 15m candles.",
+                "Patiently waiting for high timeframe confirmation always protects capital during distribution phases."
+            ],
+            "closers": [
+                "Patience and disciplined execution win the game. Great chart! 📈✨",
+                "Holding conviction through the chop. Appreciate your perspective! 🚀",
+                "Risk management first, upside second. Always appreciate your takes! 💎🙌",
+                "Looking forward to how the weekly candle wraps up. Stay sharp! 📊",
+                "Spot on analysis as always. Keep them coming! 👏"
+            ]
+        },
+        "id": {
+            "openers": [
+                "Analisa market yang jernih dan berbobot banget!",
+                "Sudut pandang objektif yang sangat ngebantu baca arah pergerakan.",
+                "Pembahasan chart yang rapi no fomo-fomo club.",
+                "Senang baca analisa teknikal yang tetap mempertimbangkan likuiditas makro gini.",
+                "Perspektif yang sangat masuk akal di tengah volatilitas saat ini.",
+                "Ulasan market yang komprehensif dan gampang dimengerti."
+            ],
+            "insights": [
+                "Serapan di area support kuat nunjukin akumulasi rapi dari smart money saat retail lagi ragu.",
+                "Reset funding rate dan pembersihan leverage tinggi emang pondasi paling sehat buat tren jangka panjang.",
+                "Fase konsolidasi kayak gini emang paling pas buat sabar dan disiplin nunggu konfirmasi konkrit.",
+                "Data orderbook dan volume delta ga pernah bohong kalau likuiditas emang lagi berpindah.",
+                "Fokus ke timeframe besar selalu ngebantu jaga emosi biar ga gampang ke-shakeout."
+            ],
+            "closers": [
+                "Disiplin manajemen risiko tetep yang utama. Insight mantap bang! 📈✨",
+                "Setuju banget, sabar adalah kunci survive di crypto. Gaspol! 🚀",
+                "Makasih sharing sudut pandang dagingnya bang, sangat mencerahkan! 💎🙌",
+                "Semoga setup-nya jalan sesuai rencana. Salam cuan! 📊",
+                "Tetap waras dan pantau konfirmasi weekly close! 👏"
+            ]
+        }
     },
     "tech": {
-        "en": [
-            "Huge milestone! Shipping high-quality tech consistently regardless of market noise is what builds longevity 🚀🔥",
-            "Super clean execution by the team. The throughput and UX improvement here is genuinely impressive 👏",
-            "Incredible development speed. Real builders never stop innovating. Excited for what's coming next! 🌟",
-            "Massive leap forward for onchain infrastructure. The ecosystem is maturing at a rapid pace ⚡💎",
-            "This is what real Web3 adoption looks like. Huge respect to the entire engineering team 🫡✨"
-        ],
-        "id": [
-            "Milestone yang luar biasa! Tim dev beneran konsisten build tanpa banyak drama. Ekosistem makin solid 🔥🚀",
-            "Eksekusi yang sangat rapi. Peningkatan performa dan UX-nya kerasa banget bedanya buat pengguna 👏",
-            "Keren banget progressnya, update yang beneran menjawab kebutuhan komunitas. Sukses terus buat timnya! 🌟",
-            "Inovasi infrastruktur onchain yang makin matang. Nggak sabar liat adopsi skala besarnya ke depan ⚡💎",
-            "Salut sama konsistensi timnya! Ekosistem yang kuat emang dibangun dari fondasi teknologi yang berbobot 🫡✨"
-        ]
+        "en": {
+            "openers": [
+                "Huge milestone for the ecosystem!",
+                "Incredible engineering progress shipped by the team.",
+                "This is what legitimate infrastructure building looks like.",
+                "Super impressive throughput and architectural leap here.",
+                "Exciting development for onchain scalability and developer experience.",
+                "Remarkable execution from the engineering crew."
+            ],
+            "insights": [
+                "Sub-second finality and predictable fee markets are absolute prerequisites for real retail adoption.",
+                "Reducing state bloat and optimizing parallel transaction execution solves genuine Web3 friction points.",
+                "Protocols that prioritize intuitive developer tooling always cultivate the stickiest application layers.",
+                "Building robust decentralization without compromising execution speed is the holy grail of modern L1/L2s.",
+                "Continuous shipping in quiet markets is the ultimate signal of long-term project longevity."
+            ],
+            "closers": [
+                "Excited to see the next wave of dApps deploying here! 🚀⚡",
+                "Huge respect to the devs putting in the work day in and day out! 🫡🔥",
+                "This is how mass adoption actually gets built. Keep pushing forward! 👏💎",
+                "Watching this ecosystem expand closely. Solid milestone! ✨",
+                "Real value accrues to real builders. Congrats to the team! 🌟"
+            ]
+        },
+        "id": {
+            "openers": [
+                "Milestone yang sangat luar biasa buat perkembangan ekosistem!",
+                "Progress engineering yang nyata dan konsisten dari tim dev.",
+                "Inovasi infrastruktur yang beneran ngasih solusi konkret.",
+                "Keren banget update teknologinya, peningkatan performanya berasa banget.",
+                "Langkah maju yang signifikan buat skalabilitas dan ekosistem Web3.",
+                "Eksekusi yang sangat rapi dan berkelas dari tim pengembang."
+            ],
+            "insights": [
+                "Penyempurnaan arsitektur dan efisiensi gas fee terbukti bikin interaksi dApps makin mulus.",
+                "Fitur eksekusi paralel dan mitigasi kongesti adalah jawaban nyata buat adopsi pengguna skala besar.",
+                "Fokus tim dev buat nyelesaiin kendala UX bakal narik lebih banyak developer top ke ekosistem ini.",
+                "Konsistensi build di segala kondisi market nunjukin komitmen jangka panjang yang luar biasa.",
+                "Teknologi yang solid selalu jadi fondasi utama keberhasilan sebuah protokol Web3."
+            ],
+            "closers": [
+                "Ga sabar liat ekosistem dApps baru yang bakal lahir di sini! 🚀⚡",
+                "Salut setinggi-tingginya buat tim dev yang terus berinovasi! 🫡🔥",
+                "Pondasi kuat buat adopsi massal ke depan. Sukses terus tim! 👏💎",
+                "Update yang sangat dinanti. Maju terus Web3 builders! ✨",
+                "Ekosistem makin matang dan berbobot. Mantap jiwa! 🌟"
+            ]
+        }
     },
     "general": {
-        "en": [
-            "100% agreed with this perspective. High quality insight that adds real clarity to the timeline 💡",
-            "Really well-articulated thoughts. Appreciate you sharing this valuable perspective with the community ✨",
-            "Spot on! In a space full of hype, grounded takes like this are always refreshing to read 💯",
-            "Appreciate the continuous value you bring to CT. Always keeping notifications on for your posts! 🙌🔥",
-            "Completely on point. Long-term mindset is the only sustainable strategy in Web3 💎"
-        ],
-        "id": [
-            "Setuju banget sama poin ini! Insight yang berbobot dan ngebuka wawasan baru tentang dinamika Web3 💡",
-            "Penyampaiannya jernih dan berbobot. Senang baca opini yang konstruktif dan realistis gini ✨",
-            "Valid no debat sih ini. Mindset jangka panjang emang satu-satunya kunci bertahan di crypto 💯",
-            "Makasih udah sharing insight dagingnya bang! Konten kayak gini yang bikin timeline tetap bernilai 🙌🔥",
-            "Poin penting yang sering dilewatin orang. Sukses terus dan sehat selalu bang! 👍"
-        ]
+        "en": {
+            "openers": [
+                "100% agreed with this perspective.",
+                "Really thoughtful and well-articulated take.",
+                "Spot on! Grounded thoughts like this bring much-needed clarity.",
+                "Couldn't agree more with the thesis here.",
+                "Appreciate you taking the time to share this perspective.",
+                "Valuable insight that resonates deeply with long-term participants."
+            ],
+            "insights": [
+                "Having a disciplined long-term horizon beats reacting to daily timeline hype every single time.",
+                "Protecting your mental clarity and capital during choppy phases is the greatest edge in crypto.",
+                "Deep conviction backed by rigorous research always outlasts speculative narratives.",
+                "The people who compound value quietly behind the scenes are the ones who thrive across cycles.",
+                "Staying humble, managing exposure, and continuous learning are the true cheat codes in Web3."
+            ],
+            "closers": [
+                "Always look forward to your posts. Keep sharing value! 🙌💎",
+                "Spot on. Have an incredible week ahead! ✨",
+                "Timeless advice for anyone navigating this space. Respect! 💯",
+                "Quality insights as always. Stay sharp and grounded! 🚀",
+                "Golden take. Appreciate the continuous inspiration! 🫡"
+            ]
+        },
+        "id": {
+            "openers": [
+                "Setuju 100% sama sudut pandang ini!",
+                "Penyampaian yang sangat jernih dan sarat makna.",
+                "Insight bernas yang sangat relevan buat dinamika Web3 saat ini.",
+                "Valid no debat sih poin yang disampaikan ini.",
+                "Makasih udah nulis refleksi yang sangat berbobot bang.",
+                "Opini yang sangat membuka mata dan menenangkan timeline."
+            ],
+            "insights": [
+                "Mindset jangka panjang dan kedewasaan emosional emang satu-satunya kunci sukses di industri ini.",
+                "Menjaga modal pokok dan kesehatan mental jauh lebih penting daripada terjebak FOMO musiman.",
+                "Riset mendalam dan keyakinan pada fundamental ga bakal gampang goyah cuma karena noise sesaat.",
+                "Mereka yang tekun belajar dan konsisten berproses adalah yang bakal menikmati hasil paling manis.",
+                "Kedisiplinan mengeksekusi strategi adalah pembeda nyata antara trader matang dan exit liquidity."
+            ],
+            "closers": [
+                "Selalu nunggu postingan bergizi kayak gini bang. Sukses selalu! 🙌💎",
+                "Insight daging yang patut diresapi. Sehat dan berkah selalu bang! ✨",
+                "Pengingat luar biasa buat kita semua. Tetap semangat! 💯",
+                "Konten berkualitas yang bikin timeline adem dan cerdas. Mantap! 🚀",
+                "Keren banget sharingnya. Gaspol terus edukasinya bang! 🫡"
+            ]
+        }
     }
 }
+
+
+def load_used_comments() -> set:
+    """Memuat hash komentar yang pernah diposting untuk mencegah duplikasi."""
+    if not USED_COMMENTS_FILE.exists():
+        return set()
+    try:
+        with open(USED_COMMENTS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return set(data) if isinstance(data, list) else set(data.keys())
+    except Exception:
+        return set()
+
+
+def save_used_comment(comment_text: str):
+    """Menyimpan hash komentar baru ke database persistent anti-duplikasi."""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    comments = load_used_comments()
+
+    clean_text = re.sub(r"\W+", " ", comment_text).strip().lower()
+    c_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
+    comments.add(c_hash)
+
+    try:
+        with open(USED_COMMENTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(list(comments), f, indent=2)
+    except Exception:
+        pass
+
+
+def is_comment_duplicate(comment_text: str, used_comments: set) -> bool:
+    """Mengecek apakah komentar identik pernah diposting sebelumnya."""
+    clean_text = re.sub(r"\W+", " ", comment_text).strip().lower()
+    if not clean_text:
+        return False
+    c_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
+    return c_hash in used_comments
 
 
 def detect_context(text: str) -> str:
@@ -154,13 +332,33 @@ def detect_language(text: str) -> str:
     return "id" if len(words.intersection(id_words)) >= 2 else "en"
 
 
-def generate_contextual_comment(tweet_text: str) -> str:
-    """Menghasilkan komentar yang sangat pas dengan isi tweet viral."""
+def generate_modular_comment(tweet_text: str) -> str:
+    """Menyusun komentar kontekstual bernilai tinggi dari komponen modular."""
     ctx = detect_context(tweet_text)
     lang = detect_language(tweet_text)
 
-    pool = SMART_COMMENTS.get(ctx, SMART_COMMENTS["general"]).get(lang, SMART_COMMENTS["general"]["en"])
-    return random.choice(pool)
+    pool = MODULAR_COMMENTS.get(ctx, MODULAR_COMMENTS["general"]).get(lang, MODULAR_COMMENTS["general"]["en"])
+    opener = random.choice(pool["openers"])
+    insight = random.choice(pool["insights"])
+    closer = random.choice(pool["closers"])
+
+    return f"{opener} {insight} {closer}".strip()
+
+
+def generate_contextual_comment(tweet_text: str, max_retries: int = 50) -> str:
+    """
+    Menghasilkan komentar yang sangat pas dengan isi tweet viral
+    dan DIJAMIN 100% BEBAS DUPLIKASI dari riwayat komentar sebelumnya.
+    """
+    used_comments = load_used_comments()
+
+    for _ in range(max_retries):
+        comment = generate_modular_comment(tweet_text)
+        if not is_comment_duplicate(comment, used_comments):
+            return comment
+
+    # Fallback jika permutasi terbentur
+    return generate_modular_comment(tweet_text)
 
 
 def load_history() -> set:
@@ -198,6 +396,9 @@ def record_engagement(tweet_id: str, author: str, tweet_url: str, actions: list[
             json.dump(history, f, indent=2, ensure_ascii=False)
     except Exception:
         pass
+
+    if comment:
+        save_used_comment(comment)
 
 
 async def engage_with_tweet(

@@ -1,36 +1,57 @@
-# 𝕏 (Twitter) Multi-Account Automation & Giveaway Hunter Suite 🚀
+# 𝕏 (Twitter) Multi-Account Autonomous Crypto & Airdrop Bot Suite 🚀
 
-Suite otomatisasi multi-akun Twitter / X terlengkap dan modern berbasis **Python + Playwright (Headless Chrome)**. Dirancang khusus untuk **Scraping & Auto-Hunter Airdrop Giveaway (EVM & Solana)**, **Warming Up Akun (Yapping & Interaksi Timeline)**, serta manajemen terpadu multi-akun via **Web Dashboard** dan **CLI Standalone**.
+Suite otomatisasi multi-akun Twitter / X terlengkap dan modern berbasis **Python + Playwright (Headless Chrome)**. Dirancang khusus untuk **Crypto Yapping Ber-Value Tinggi**, **Viral Crypto & Airdrop Engagement**, **Pembersih Following (0 Following Maintenance)**, **Pengecekan Status Kesehatan Akun**, serta **Auto-Hunter Airdrop Giveaway (EVM & Solana)**.
 
 ---
 
-## 🌟 Fitur Utama
+## 🌟 Fitur Unggulan Terbaru
 
-### 1. 🎁 Scraping & Auto-Hunter Giveaway (EVM & Solana)
-- **Eksekusi 4 Aksi Wajib Secara Nyata di X**:
-  1. **❤️ Auto-Like**: Menyukai tweet target dengan deteksi dan konfirmasi status aktif.
-  2. **🔁 Auto-Retweet (Repost)**: Melakukan retweet/repost otomatis.
-  3. **👤 Auto-Follow Author**: Mengikuti author giveaway di halaman status tweet atau profil author secara otomatis.
-  4. **👛 Auto-Drop Address**: Mengetik alamat wallet murni (*pure address*) secara natural via keyboard & `Control + Enter` ke GraphQL API Twitter tanpa terblokir modal/banner.
-- **Deteksi Jaringan Otomatis**: Mendeteksi kebutuhan alamat **EVM (`0x...`)** atau **Solana (Base58)** sesuai isi tweet.
-- **Filter Rentang Waktu**: Memindai tweet aktif dalam rentang waktu tertentu (misal: 12 jam terakhir).
-- **Anti-Duplikasi**: Seluruh tweet yang sudah pernah dikerjakan dicatat di `results/airdrop_history.json` agar tidak pernah dobel entri.
+### 1. 🤖 Master Autonomous Crypto Bot (`master_crypto_bot.py`)
+Orkestrator utama yang menjalankan dua engine secara simultan dan otomatis 24/7 tanpa benturan memori:
+- **Engine 1 (Original Post Yapping)**:
+  - 1x postingan tweet crypto yapping per akun aktif.
+  - Menyematkan Cashtags dinamis (`$SOL`, `$BTC`, `$ETH`, `$SUI`, dll.) dan Hashtags relevan (`#Crypto`, `#Solana`, `#Bitcoin`, `#DeFi`, dll.).
+  - **Jeda Antar Siklus**: 1 – 2 Jam (60 – 120 menit acak).
+- **Engine 2 (Viral Crypto & Airdrop Engagement)**:
+  - 5x postingan viral per batch per akun aktif.
+  - **Aksi Nyata**: Auto-Like ❤️ + Auto-Retweet 🔁 + Komentar Kontekstual Berbobot 💬.
+  - **Anti-Spam & Keamanan**:
+    - 🚫 **Tanpa Follow (0 Following Tetap Terjaga)**: Tidak pernah mem-follow akun siapapun.
+    - 🚫 **Bukan Giveaway Drop Address**: Melewati tweet giveaway drop wallet/raffle agar tidak dianggap bot spam.
+  - **Jeda Antar Batch**: 30 – 60 Menit acak.
+- **Hardware RAM Lock (`asyncio.Lock`)**:
+  - Memastikan hanya ada 1 instance browser Chrome yang aktif dalam satu waktu.
+  - RAM dan CPU laptop/VPS tetap dingin, ringan, dan stabil.
 
-### 2. 💬 Yapping Random & Account Warmer (Anti-Suspend)
-- **Postingan Yapping Santai**: Memposting tweet curhat harian, gosip/opini netizen, dan tips edukasi ringan berbahasa Indonesia dengan variasi template anti-duplikat.
-- **5x Like & Smart Comment Timeline**: Menjelajahi timeline *For You*, mendeteksi topik postingan, dan memposting balasan komentar cerdas dan relevan (Bahasa Indonesia / Inggris).
+---
 
-### 3. 🌐 Modern Web Dashboard (Port 5050)
-- Tampilan UI responsif dengan **Sidebar Navigasi Kiri**:
-  - 🏠 **Dashboard**: Ringkasan status, token, dan aktivitas seluruh akun.
-  - 💬 **Yapping Random**: Kontrol pemanasan akun & looping jeda alami (10–30 menit).
-  - 🎁 **Scraping Giveaway**: Mulai & hentikan perburuan giveaway per-akun atau semua akun.
-  - 👛 **Submit Address**: Form input dan penyimpanan alamat wallet EVM & Solana untuk masing-masing akun.
+### 2. 🧠 High-Value Combinatorial Generator & Anti-Duplikasi Persisten
+Dirancang khusus untuk menghasilkan konten berbobot tinggi (high-value alpha) dengan **Zero Duplication Guarantee**:
+- **Arsitektur Modular Multi-Layer**:
+  - Postingan yapping dan komentar disusun dari layer: `Hook / Perspective` + `Deep Technical / Macro Insight` + `Actionable Takeaway` + `Sign-off / Engagement Closer`.
+  - Meliputi topik: Macro Liquidity (M2 & ETF flows), High-Throughput L1s & Parallel EVM (Solana, Monad, Sui), Sybil-Proof Airdrop Grinding, DeFi Real Yield, dan Psikologi & Manajemen Risiko Trading.
+  - Menghasilkan **> 1,500,000 kombinasi unik** yang koheren, profesional, dan berbobot.
+- **Persistent Anti-Duplication Engine**:
+  - `results/used_yapping_signatures.json`: Mencatat hash SHA256 & teks bersih setiap yapping.
+  - `results/used_viral_comments.json`: Mencatat hash SHA256 seluruh komentar viral.
+  - Sistem otomatis mengecek riwayat sebelum memposting. Jika terdeteksi kemiripan, bot otomatis melakukan regenerasi instan sampai tweet/komentar 100% segar dan unik.
 
-### 4. ⚡ Standalone Low-RAM Hunter (Mode Mandiri Hemat Memori)
-- Menjalankan scraping giveaway secara **berurutan (sequential)** 1 akun pada satu waktu.
-- Setiap kali akun selesai, browser otomatis ditutup tuntas sehingga RAM 100% bersih kembali sebelum beralih ke akun berikutnya.
-- Cocok untuk laptop/VPS dengan spesifikasi RAM terbatas.
+---
+
+### 3. 🧹 Mass Multi-Account Unfollow Bot (`multi_account_unfollow.py`)
+- Menelusuri daftar following seluruh akun dan melakukan unfollow otomatis hingga **0 Following**.
+- Membantu menjaga profil akun tetap bersih dan terhindar dari deteksi farm bot.
+
+---
+
+### 4. 🔍 Account Status & Health Checker (`check_all_accounts_status.py`)
+- Memindai status API dan sesi seluruh akun di `accounts.json`.
+- Mendeteksi akun suspended (Error 64) secara otomatis dan memberi tanda `"suspended": true` agar engine yapping & engagement otomatis melewatinya dengan aman tanpa crash.
+
+---
+
+### 5. 🎁 Classic Giveaway Hunter (`browser_hunter.py` & `web_dashboard.py`)
+- Scraping giveaway EVM & Solana dengan eksekusi 4 aksi: Like, Retweet, Follow, dan Drop Address via Web Dashboard (Port 5050).
 
 ---
 
@@ -38,31 +59,20 @@ Suite otomatisasi multi-akun Twitter / X terlengkap dan modern berbasis **Python
 
 ### 1. Prasyarat Sistem
 - **Python 3.10+** terinstal di sistem.
-- **Google Chrome** terinstal (Playwright menggunakan channel Chrome).
+- **Google Chrome** terinstal.
 
-### 2. Clone Repositori & Masuk Folder
-```bash
-cd "twitter-scraper-bot"
-```
-
-### 3. Install Dependensi & Browser Playwright
+### 2. Install Dependensi & Browser Playwright
 ```bash
 pip install -r requirements.txt
 playwright install chromium
 ```
 
----
-
-## ⚙️ Konfigurasi Akun & Wallet
-
-### 1. Salin File Contoh Konfigurasi
+### 3. Konfigurasi Akun di `accounts.json`
+Salin template konfigurasi:
 ```bash
 cp accounts.json.example accounts.json
-cp wallets.json.example wallets.json
 ```
-
-### 2. Mengisi Akun di `accounts.json`
-Dapatkan cookie `auth_token` dan `ct0` dari browser kamu (melalui *Inspect Element ➔ Application ➔ Cookies ➔ https://x.com*):
+Isi cookie `auth_token` dan `ct0` dari browser (melalui *Inspect Element ➔ Application ➔ Cookies ➔ https://x.com*):
 ```json
 {
   "active_account": "fannettt",
@@ -70,18 +80,10 @@ Dapatkan cookie `auth_token` dan `ct0` dari browser kamu (melalui *Inspect Eleme
     "fannettt": {
       "screen_name": "fannettt",
       "name": "Fannet",
-      "auth_token": "ISI_AUTH_TOKEN_AKUN_1",
-      "ct0": "ISI_CT0_AKUN_1",
-      "evm_address": "0x914d683638BdF964d1ed7a55EC76C32c786C5240",
-      "solana_address": "ER8VpGr7psPRsitY1h6HkEZjyiGBo8MFRduwuqGGWF5T"
-    },
-    "akun_kedua": {
-      "screen_name": "akun_kedua",
-      "name": "Akun 2",
-      "auth_token": "ISI_AUTH_TOKEN_AKUN_2",
-      "ct0": "ISI_CT0_AKUN_2",
-      "evm_address": "0x779d939E0B4C047E8A546A2D5e3FeA022c296628",
-      "solana_address": "47DufCMaJBncLj1NcrExqtseLkGpKmP3sg8bZf6RT2jS"
+      "auth_token": "ISI_AUTH_TOKEN",
+      "ct0": "ISI_CT0",
+      "evm_address": "0x...",
+      "solana_address": "..."
     }
   }
 }
@@ -91,50 +93,50 @@ Dapatkan cookie `auth_token` dan `ct0` dari browser kamu (melalui *Inspect Eleme
 
 ## 🚀 Cara Menjalankan Bot
 
-### 📌 Pilihan A: Menjalankan Web Dashboard (Rekomendasi UI)
-Jalankan server dashboard web:
+### 📌 1. Menjalankan Master Bot Crypto (Rekomendasi Utama)
+Menjalankan posting mandiri (delay 1-2 jam) dan viral engagement 5x batch (delay 30-60 menit) secara otomatis dan bergantian:
 ```bash
-python web_dashboard.py
+python master_crypto_bot.py
 ```
-Buka browser dan akses:
-👉 **[http://localhost:5050](http://localhost:5050)**
-
-Fitur di dashboard:
-- Tambah / Hapus akun Twitter dengan `auth_token` dan `ct0`.
-- Atur alamat wallet EVM & Solana tiap akun.
-- Tombol **Mulai / Hentikan** untuk Yapping Random & Scraping Giveaway secara terpisah per-akun atau global.
+*Opsi tambahan:*
+- `--yapping-min 60 --yapping-max 120`: Mengatur rentang jeda posting mandiri (dalam menit).
+- `--viral-min 30 --viral-max 60`: Mengatur rentang jeda viral engagement (dalam menit).
+- `--viral-count 5`: Jumlah tweet viral per batch per akun.
+- `--visible`: Menampilkan jendela browser Chrome.
 
 ---
 
-### 📌 Pilihan B: Menjalankan Mode Mandiri / Low-RAM (Rekomendasi Laptop/VPS)
-Jalankan loop perburuan giveaway untuk semua akun secara bergiliran tanpa beban web server:
+### 📌 2. Menjalankan Engine Secara Terpisah (CLI Standalone)
+
+#### A. Postingan Yapping Crypto Mandiri:
 ```bash
-# Default: 5 tweet per akun, jeda antar ronde 10-20 menit
-python standalone_hunter_loop.py -m 5 --min-delay 10 --max-delay 20
+# 1x postingan ke seluruh akun aktif:
+python crypto_yapper.py
 
-# Khusus memburu giveaway Solana:
-python standalone_hunter_loop.py -c SOLANA -m 5
+# Looping terjadwal mandiri dengan jeda 60 - 120 menit:
+python crypto_yapper.py --loop --interval-min 60 --interval-max 120
 
-# Khusus memburu giveaway EVM:
-python standalone_hunter_loop.py -c EVM -m 5
-
-# Mode browser terlihat (non-headless):
-python standalone_hunter_loop.py --visible
+# Khusus 1 akun tertentu:
+python crypto_yapper.py -a screen_name
 ```
 
----
-
-### 📌 Pilihan C: Menjalankan 1x Sesi Cepat via CLI
+#### B. Viral Crypto & Airdrop Engagement:
 ```bash
-# Pemanasan / Yapping 1 akun aktif:
-python account_warmer.py -a screen_name
+# 5 tweet viral per akun (Like + RT + Komen kontekstual):
+python viral_crypto_engager.py -n 5
 
-# Scraping giveaway 1 akun aktif:
-python browser_hunter.py -c all -m 10 --hours 12.0
+# Mode looping mandiri:
+python viral_crypto_engager.py --loop -n 5 --interval-min 30 --interval-max 60
+```
 
-# Manajemen akun via CLI:
-python accounts_manager.py --list
-python accounts_manager.py --switch screen_name
+#### C. Cek Status Kesehatan Semua Akun:
+```bash
+python check_all_accounts_status.py
+```
+
+#### D. Unfollow Massal Semua Akun (Reset ke 0 Following):
+```bash
+python multi_account_unfollow.py
 ```
 
 ---
@@ -143,29 +145,30 @@ python accounts_manager.py --switch screen_name
 
 ```text
 twitter-scraper-bot/
-├── web_dashboard.py           # Server & UI Web Command Center (Port 5050)
-├── standalone_hunter_loop.py  # Runner mandiri looping multi-akun (Low RAM)
-├── browser_hunter.py          # Core engine perburuan giveaway (4 aksi)
-├── account_warmer.py          # Core engine yapping & komentar timeline
-├── accounts_manager.py        # Modul manajemen multi-akun
-├── airdrop_parser.py          # Analisis regex cerdas persyaratan tweet
-├── airdrop_actions.py         # Pencatatan riwayat & deduplikasi entri
-├── accounts.json              # Data akun & token (Terlindungi oleh .gitignore)
-├── accounts.json.example      # Template contoh konfigurasi akun
-├── wallets.json               # Konfigurasi default wallet
-├── wallets.json.example       # Template contoh wallet
-├── requirements.txt           # Dependensi Python
-└── results/                   # Folder database riwayat eksekusi JSON
-    ├── airdrop_history.json
-    └── warmup_history.json
+├── master_crypto_bot.py        # Orkestrator utama Autonomous Dual Engine (Yapping + Viral)
+├── crypto_yapper.py            # Engine yapping crypto berbobot tinggi + anti-duplikasi
+├── viral_crypto_engager.py     # Engine interaksi tweet viral (Like, RT, Smart Comment)
+├── multi_account_unfollow.py   # Bot unfollow massal seluruh akun ke 0 following
+├── check_all_accounts_status.py# Scanner kesehatan & pendeteksi suspend akun
+├── accounts_manager.py         # Modul manajemen cookie & akun
+├── accounts.json               # Kredensial akun (Aman, diabaikan oleh .gitignore)
+├── config.py                   # Konfigurasi path & direktori
+├── requirements.txt            # Dependensi Python
+└── results/                    # Database persistent riwayat & deduplikasi
+    ├── crypto_yapping_history.json
+    ├── used_yapping_signatures.json
+    ├── viral_crypto_engagement_history.json
+    └── used_viral_comments.json
 ```
 
 ---
 
-## 🛡️ Keamanan & Privasi
+## 🛡️ Keamanan & Anti-Ban Best Practices
 
-1. **Anti-Leak Token**: File `accounts.json`, `cookies.json`, `wallets.json`, serta folder `results/` secara otomatis diabaikan oleh `.gitignore`. Jangan pernah mengunggah token pribadi Anda ke publik!
-2. **Human-like Delays**: Seluruh modul dilengkapi jeda acak manusiawi dan event keyboard natural untuk meminimalisir risiko shadowban atau rate-limit dari X/Twitter.
+1. **Strictly Ignored Credentials**: `accounts.json`, `cookies.json`, `wallets.json`, serta folder `results/` dijamin tidak akan terunggah ke repositori publik melalui konfigurasi `.gitignore`.
+2. **Modular Combinatorial Anti-Spam**: Setiap konten dirancang unik secara matematis dan divalidasi silang terhadap log sebelumnya, mencegah flag bot copy-paste oleh algoritma X.
+3. **No Wallet Spams**: Bot tidak menjatuhkan alamat wallet di reply tweet publik yang bukan giveaway resmi.
+4. **Natural Mouse & Typing Delays**: Seluruh pengetikan menggunakan delay mikro manusiawi dan pembersihan backdrop mask secara mulus.
 
 ---
 

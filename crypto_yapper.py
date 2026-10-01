@@ -38,113 +38,338 @@ BOLD = "\033[1m"
 MAGENTA = "\033[95m"
 RESET = "\033[0m"
 
+import hashlib
+
 YAPPING_LOG_FILE = RESULTS_DIR / "crypto_yapping_history.json"
+YAPPING_SIGNATURES_FILE = RESULTS_DIR / "used_yapping_signatures.json"
 
 # ==============================================================================
 # 💎 HASHTAGS & CASHTAGS POOL
 # ==============================================================================
-CASHTAGS = ["$SOL", "$BTC", "$ETH", "$BNB", "$SUI", "$AVAX", "$NEAR", "$LINK", "$RENDER", "$ARB"]
+CASHTAGS = ["$SOL", "$BTC", "$ETH", "$BNB", "$SUI", "$AVAX", "$NEAR", "$LINK", "$RENDER", "$ARB", "$OP"]
 HASHTAGS = [
     "#Crypto", "#Bitcoin", "#Solana", "#Ethereum", "#DeFi", "#Web3",
     "#Airdrop", "#Altcoins", "#CryptoTrading", "#BullRun", "#Onchain",
-    "#CryptoCommunity", "#Blockchain", "#Memecoin"
+    "#CryptoCommunity", "#Blockchain", "#Layer2"
 ]
 
 # ==============================================================================
-# 📝 BANK KONTEN CRYPTO YAPPING (GLOBAL ENGLISH & MIXED CT INDO)
+# 🧠 MODULAR HIGH-VALUE CONTENT ENGINE (ENGLISH)
+# Kombinasi modular: Hook + Analysis/Alpha + Strategic Takeaway + Closer
 # ==============================================================================
-CRYPTO_YAPPING_TEMPLATES_EN = [
-    # Market & Chart Analysis
-    "Market holding structure nicely here. The recent liquidity sweep was textbook. Next weekly close will be decisive.",
-    "People panic on 3% red candles but forget where we were 6 months ago. Zoom out and trust the macro trend.",
-    "Solana DEX volume continuing to show insane strength. Love it or hate it, retail activity is living on-chain.",
-    "Watching $BTC consolidate right beneath resistance. The longer the base, the higher into space.",
-    "Altcoin dominance usually lags until the majors establish a clear range. Patience is literally free alpha.",
-    "Volatility is the price you pay for outsized gains in crypto. If you can't handle 10% drawdowns, you don't deserve the 10x.",
-    "Liquidity follows attention, and right now attention is shifting back to high-throughput Layer 1 ecosystems.",
-    "Smart money accumulates in silence during boring crab markets. Retail only rushes in at all-time highs.",
-    
-    # Trader Life, Degen Humor & Mindset
-    "My sleep schedule during crypto bull cycle: 3 hours sleep, 21 hours staring at 15m charts. We never learn lol.",
-    "Checking portfolio at 3 AM just to see the exact same sideways candle. True degen commitment 😭",
-    "Rule #1 in crypto: Never sell in panic after a dump. Rule #2: Take profits when you feel like taking screenshots.",
-    "The hardest trade in crypto is doing absolutely nothing and letting your winning positions ride.",
-    "GM to everyone holding through the noise and accumulating high conviction bags. Consistency wins the game ✨",
-    "Nothing humbles a person faster than high leverage crypto trading on a Sunday night haha.",
-    "Crypto taught me that patience is an active discipline, not passive waiting. Stay focused on the long game.",
-    "You don't need 50 different coins. Find 3-5 projects with real traction, understand them deeply, and hold.",
+EN_MODULAR_COMPONENTS = {
+    "macro_market": {
+        "hooks": [
+            "Taking a closer look at the broader market structure right now.",
+            "The divergence between spot accumulation and futures open interest is telling.",
+            "Most market participants get shaken out by short term chop, but macro speaks for itself:",
+            "Funding rates resetting while price forms higher lows is textbook accumulation.",
+            "Watching the liquidity shift across the majors during this consolidation range.",
+            "When everyone is distracted by minor pullbacks, smart money quietly builds positions."
+        ],
+        "analysis": [
+            "Spot ETF flows and global M2 liquidity expansion historically create the strongest structural tailwinds for high-beta assets.",
+            "Open interest flushouts are necessary to wipe aggressive leverage and build sustainable upward momentum.",
+            "Order book depth shows bids stacking firmly below current price levels, proving absorption is actively taking place.",
+            "Volume profile suggests we are in an extended re-accumulation phase right beneath major resistance bands.",
+            "Retail participation is still hesitant, which is historically the hallmark of early-to-mid stage market cycles."
+        ],
+        "takeaways": [
+            "Patience here is literally asymmetric edge. Don't let volatility shake you out of high conviction theses.",
+            "Protecting capital during choppy sideways ranges is 10x more important than chasing speculative breakout wicks.",
+            "The easiest way to underperform in crypto is overtrading chop instead of letting high-timeframe trends play out.",
+            "Risk management separates long-term winners from exit liquidity. Define your invalidation points before entering.",
+            "Zoom out to the weekly chart. Micro panic fades, structural adoption persists."
+        ],
+        "closers": [
+            "Are you accumulating the dip or waiting for confirmation? Let's discuss 👇",
+            "What's your invalidation level for this move? Drop your thoughts below.",
+            "Stay grounded, manage risk, and focus on the bigger picture.",
+            "Patience pays the highest dividends in Web3. Keep building."
+        ]
+    },
+    "l1_tech": {
+        "hooks": [
+            "The throughput debate across Layer 1 and Layer 2 ecosystems is reaching an interesting tipping point.",
+            "Execution speed and composability are proving to be the real differentiators for retail adoption.",
+            "Onchain volume continues to migrate towards chains with sub-second finality and predictable fee markets.",
+            "Architecture matters. The performance gap between legacy EVM and parallelized virtual machines is widening.",
+            "Looking past the marketing hype, actual onchain DEX metrics reveal where liquidity genuinely lives."
+        ],
+        "analysis": [
+            "Local fee markets prevent network-wide congestion spikes during NFT mints or memecoin volatility surges.",
+            "Monolithic high-throughput chains offer atomic composability that fragmented rollup ecosystems still struggle to replicate seamlessly.",
+            "Modular data availability layers are significantly reducing rollup overhead, but user experience and liquidity bridging remain key friction points.",
+            "Parallel execution engines allow thousands of non-conflicting transactions to process concurrently without latency spikes.",
+            "Sustained daily active addresses and fee generation metrics are the truest test of protocol product-market fit."
+        ],
+        "takeaways": [
+            "Focus your research on protocols that solve real UX bottlenecks rather than theoretical throughput benchmarks.",
+            "Ecosystems with thriving developer tooling and active grassroots builders consistently outperform over multi-year horizons.",
+            "True network value accrues where users interact natively, not where subsidies artificially inflate short-term TVL.",
+            "Keep an eye on developer migration. Capital always follows top-tier engineering talent."
+        ],
+        "closers": [
+            "Which ecosystem do you think onboarded the highest quality builders this cycle?",
+            "Solana speed vs Ethereum modularity: where are you allocating most conviction?",
+            "Curious to hear your takes on parallel execution. Drop your thoughts below 👇",
+            "Speed + low fees + intuitive UX is the winning triad for mass adoption."
+        ]
+    },
+    "airdrop_grind": {
+        "hooks": [
+            "Grinding onchain protocols while the timeline is distracted by speculative noise.",
+            "The meta for crypto airdrops has fundamentally evolved over the past two years.",
+            "Sybil filtering algorithms are getting increasingly sophisticated across early-stage testnets.",
+            "Real value in Web3 is generated by early, genuine community contributors who test before mainnet launch.",
+            "Consistent onchain footprint > last-minute volume spamming every single time."
+        ],
+        "analysis": [
+            "Protocols now prioritize organic user behavior: multi-month retention, diversified contract interactions, and governance voting over brute-force sybil clusters.",
+            "Providing genuine liquidity and interacting with diverse smart contracts builds an authentic wallet profile that withstands strict criteria.",
+            "Deploying contracts, participating in community feedback loops, and using official bridges regularly puts you in the top 5% of early adopters.",
+            "Airdrop allocation heuristics heavily weight wallet age, gas spend consistency, and cross-protocol composability."
+        ],
+        "takeaways": [
+            "Treat airdrop farming like venture research: understand protocol mechanics deeply instead of blindly clicking buttons.",
+            "Wallet security reminder: revoke unused approvals regularly and never keep primary capital in testnet wallets.",
+            "Consistency and patience compound quietly. The most rewarding snapshots are taken during quiet market phases.",
+            "One authentic, well-curated wallet interaction will outperform 50 low-effort bot transactions every time."
+        ],
+        "closers": [
+            "What testnet or early protocol are you dedicating the most time to this month?",
+            "Security first, always: revoke contracts and safeguard your seed phrases 🛡️",
+            "Consistent daily execution compounds into life-changing upside. Keep grinding.",
+            "Alpha is found where others consider the work too tedious. Stay persistent."
+        ]
+    },
+    "risk_mindset": {
+        "hooks": [
+            "A quick reminder on risk management and mindset in the middle of market volatility:",
+            "The hardest trade in crypto isn't finding a 10x gem, it's having the emotional discipline to keep it.",
+            "Surviving multiple crypto cycles boils down to one simple habit: protecting your seed capital.",
+            "Psychology is the single biggest determinant of your crypto portfolio performance over a 4-year horizon.",
+            "Nothing teaches humility faster than experiencing a sharp correction with unhedged leverage."
+        ],
+        "analysis": [
+            "Taking partial profits into aggressive vertical pumps guarantees psychological stability during inevitable retests.",
+            "Position sizing dictates whether a 20% drawdown feels like an opportunity to accumulate or an existential crisis.",
+            "Over-diversifying into 40 different altcoins simply dilutes focus and guarantees underperformance against the majors.",
+            "Emotional discipline means executing according to a pre-defined plan rather than reacting to timeline sentiment."
+        ],
+        "takeaways": [
+            "Write down your profit-taking rules before the euphoria hits, because emotions will betray you at the top.",
+            "Your principal is your lifeblood in this market. Once you lose capital, compounding resets to zero.",
+            "Have conviction in 3-5 solid theses, understand their catalysts deeply, and let time do the heavy lifting.",
+            "Tune out the hype, eliminate revenge trading, and respect the macro cycle."
+        ],
+        "closers": [
+            "What was the single most valuable lesson your first crypto cycle taught you?",
+            "Stay disciplined, protect your capital, and let winners run. We move.",
+            "Consistency > Luck. Have a productive week crypto fam! ✨",
+            "Preserve capital first, seek asymmetric upside second."
+        ]
+    }
+}
 
-    # Airdrop & Onchain Grind
-    "Grinding onchain protocols while the timeline argues about short-term noise. Real value is built quietly.",
-    "Staking, providing liquidity, and testing early protocols. The compounding effect of active onchain users is huge.",
-    "Reminder for crypto fam: revoke unused wallet approvals regularly. Wallet security is rule number zero 🛡️",
-    "The best airdrops are always the ones that feel like boring work when everyone else is distracted.",
-    "Gas fees low, network fast, UX improving daily. Web3 is genuinely getting better every single cycle.",
+# ==============================================================================
+# 🧠 MODULAR HIGH-VALUE CONTENT ENGINE (INDONESIAN)
+# ==============================================================================
+ID_MODULAR_COMPONENTS = {
+    "macro_market": {
+        "hooks": [
+            "Menarik banget merhatiin struktur market crypto di time frame besar belakangan ini.",
+            "Di tengah noise koreksi minor, data likuiditas makro justru nunjukin pola akumulasi yang rapi.",
+            "Banyak yang panik tiap ada candle merah tipis, padahal support time frame mingguan masih sangat solid.",
+            "Divergensi antara akumulasi spot dan funding rate futures seringkali jadi sinyal paling jujur.",
+            "Fase sideways ngebosenin kayak gini biasanya justru jadi pondasi terkuat sebelum ekspansi besar."
+        ],
+        "analysis": [
+            "Inflow ETF spot dan ekspansi likuiditas global M2 secara historis selalu jadi bahan bakar utama kenaikan aset crypto ber-beta tinggi.",
+            "Pembersihan open interest leverage tinggi memang wajib terjadi biar market ga rentan liquidasi massal pas naik.",
+            "Orderbook depth di bursa tier-1 nunjukin serapan order beli yang konsisten tiap kali harga nguji area demand.",
+            "Siklus crypto selalu punya ritme yang mirip: Bitcoin bangun base dulu, dominasi stabil, baru modal rotasi ke altcoin berfundamental kuat."
+        ],
+        "takeaways": [
+            "Kunci survive di crypto sederhana tapi susah dipraktekkin: sabar dan jangan overtrading di fase konsolidasi.",
+            "Amankan modal pokok jauh lebih krusial daripada ngejar koin liar yang udah terbang ratusan persen.",
+            "Disiplin money management dan siapin plan invalidasi sebelum masuk posisi biar ga panik pas market goyang.",
+            "Fokus ke horizon jangka panjang. Candle 15 menit sering bikin stres, tapi chart mingguan nunjukin arah yang jelas."
+        ],
+        "closers": [
+            "Kalian tim nunggu breakout atau udah cicil akumulasi di support? Spill dong di reply 👇",
+            "Tetap tenang, jaga manajemen risiko, dan jangan fomo. Happy trading guys! 📈",
+            "Gimana pandangan kalian soal market minggu ini? Yuk diskusi santai di bawah.",
+            "Konsistensi dan riset mandiri selalu menangin game ini dalam jangka panjang."
+        ]
+    },
+    "l1_tech": {
+        "hooks": [
+            "Perkembangan teknologi blockchain Layer 1 dan ekosistem modular makin menarik buat diikuti.",
+            "Kecepatan finalitas transaksi dan fee murah terbukti jadi faktor penentu utama adopsi retail onchain.",
+            "Kalau liat metriks aktivitas onchain, liquidity gap antar ekosistem makin keliatan jelas.",
+            "Inovasi arsitektur parallel execution beneran ngubah standar performa blockchain ke level berikutnya."
+        ],
+        "analysis": [
+            "Fitur local fee market sukses cegah spike gas fee ke seluruh jaringan pas ada lonjakan volume transaksi spesifik.",
+            "Ekosistem dengan composability tinggi lebih gampang narik likuiditas organik dibanding rollup yang terfragmentasi.",
+            "Pengurangan biaya data availability makin efisien, tapi tantangan terbesar tetap ada di integrasi UX buat user awam.",
+            "Developer activity dan retensi builder komunitas lokal adalah indikator fundamental paling nyata untuk jangka panjang."
+        ],
+        "takeaways": [
+            "Fokus riset ke proyek yang beneran nyelesaiin masalah skalabilitas dan UX nyata, bukan sekadar janji TPS di whitepaper.",
+            "Ekosistem yang punya komunitas developer solid biasanya paling tahan banting waktu market lagi lesu.",
+            "Pantau terus pergerakan developer onchain, karena modal besar selalu ngalir ke tempat para builder terbaik berkarya."
+        ],
+        "closers": [
+            "Sektor mana yang menurut kalian paling siap bawa mass adoption cycle ini? Share di reply 👇",
+            "Kecepatan transaksi tinggi + keamanan + biaya super murah adalah kunci adopsi massal.",
+            "Menarik banget mantau kompetisi infrastruktur Web3 sekarang. Gaspol terus risetnya! ⚡"
+        ]
+    },
+    "airdrop_grind": {
+        "hooks": [
+            "Fokus garap protokol early stage dan ekosistem baru selagi timeline lagi adem ayem.",
+            "Meta airdrop crypto sekarang udah jauh berubah dibanding siklus sebelumnya.",
+            "Filter anti-sybil dari tim developer protokol tier-1 sekarang makin pintar dan ketat.",
+            "Alpha terbesar di Web3 seringkali didapet dari ketekunan mencoba protokol yang belum punya token."
+        ],
+        "analysis": [
+            "Kriteria airdrop modern lebih ngehargain user organik dengan retensi bulanan, volume wajar, dan partisipasi governance aktif.",
+            "Interaksi rutin di smart contract resmi jauh lebih berpeluang lolos snapshot dibanding transaksi spam massal dalam satu hari.",
+            "Mencoba testnet, ngasih feedback konstruktif ke dev, dan aktif di testnet faucet adalah cara terbaik ningkatin ranking eligibility."
+        ],
+        "takeaways": [
+            "Garap airdrop kayak venture research: pahami mekanismenya, jangan cuma asal klik tanpa ngerti fungsinya.",
+            "Penting banget: rajin revoke approval smart contract di wallet biar aset utama tetap aman terlindungi 🛡️",
+            "Ketekunan yang ga keliatan hari ini bakal berbuah manis pas distribusi token nanti. Konsistensi adalah kunci."
+        ],
+        "closers": [
+            "Lagi tekun garap testnet atau ekosistem apa nih minggu ini? Spill di bawah ya 👇",
+            "Selalu prioritaskan keamanan wallet: revoke kontrak mencurigakan dan simpan seed phrase aman!",
+            "Semangat buat para pejuang testnet dan airdrop hunter yang konsisten! Rezeki ga bakal tertukar 🔥"
+        ]
+    },
+    "risk_mindset": {
+        "hooks": [
+            "Reminder penting buat kita semua yang bergelut di dunia crypto:",
+            "Tantangan tersulit di crypto bukan nemuin koin yang bakal naik, tapi punya kontrol emosi buat ngejaga profitnya.",
+            "Pelajaran paling mahal dari tiap cycle selalu sama: jaga modal pokok di atas segalanya.",
+            "Psikologi trading menyumbang 80% dari hasil portofolio kalian dalam jangka panjang."
+        ],
+        "analysis": [
+            "Take profit bertahap pas market lagi euforia adalah penyelamat terbaik biar ga gigit jari pas koreksi datang.",
+            "Position sizing yang sehat bikin kita tetap bisa tidur nyenyak walaupun market lagi bergejolak 20%.",
+            "Terlalu banyak megang koin cuma bikin fokus pecah dan seringkali kalah performa dibanding fokus di 3-5 koin unggulan."
+        ],
+        "takeaways": [
+            "Bikin trading plan sebelum masuk, dan patuhi plan itu tanpa terpengaruh FOMO timeline.",
+            "Modal pokok itu nafas trader. Begitu modal habis, kesempatan buat compounding juga hilang seketika.",
+            "Jauhi balas dendam trading (revenge trade) setelah kena cut loss. Tenangkan pikiran dulu."
+        ],
+        "closers": [
+            "Apa pelajaran paling berharga yang kalian dapet dari perjalanan di crypto? Share yuk 👇",
+            "Disiplin, jaga emosi, dan utamakan manajemen risiko. Have a great day crypto fam! ✨",
+            "Tetap waras di tengah volatilitas market. Utamakan kesehatan dan keluarga! ☕"
+        ]
+    }
+}
 
-    # Engagement Questions & Community
-    "What is your single highest conviction altcoin hold for this cycle? Drop your ticker below 👇",
-    "If you could only hold 3 crypto tokens for the next 2 years, what would your portfolio look like?",
-    "Solana ecosystem speed vs Ethereum security: where do you think the next 100M retail users will onboard?",
-    "Bear markets make you appreciate the technology, bull markets test your emotional discipline. Where are you at right now?",
-    "Which crypto narrative do you think will dominate the next leg up? AI tokens, DePIN, or Memecoins?"
-]
 
-CRYPTO_YAPPING_TEMPLATES_ID = [
-    # Market & Sentimen Santai
-    "Market lagi sideways gini emang paling bener akumulasi pelan-pelan. Jangan fomo pas udah hijau tebel.",
-    "Kalo liat pergerakan onchain belakangan ini, volume transaksi ekosistem $SOL emang ga ada obatnya sih.",
-    "Kunci survive di crypto sederhana: jangan all-in di satu koin, selalu sisain stablecoin buat serok pas dip.",
-    "Chart $BTC masih rapi banget nahan support. Tinggal nunggu konfirmasi volume buat breakout.",
-    "Banyak yg panik pas koreksi tipis, padahal fundamental jangka panjangnya masih sangat bullish.",
-    "Siklus crypto selalu berulang: Bitcoin jalan duluan, Ethereum nyusul, baru pesta altcoin dimulai.",
-
-    # Degen Humor & Kehidupan Trader
-    "Bangun tidur langsung buka charts, sebelum tidur cek portfolio lagi. Rutinitas anak crypto tiada tanding wkwk 😭",
-    "Niatnya mau scalping 5 menit, taunya nyangkut terus jadi long-term investor wkwk. Siapa yg relate?",
-    "Pelajaran paling mahal di crypto itu emang FOMO pas puncak sama panic sell di dasar wkwk.",
-    "GM crypto fam! Tetap waras di tengah volatilitas market ya, jangan lupa makan sama ngopi ☕✨",
-    "Ngecek portofolio tiap 10 menit padahal candle-nya masih sideways di situ-situ aja wkwk.",
-    "Trading pake emosi = jalan tol ke likuidasi. Manajemen risiko tetep nomor satu guys.",
-
-    # Airdrop & Alpha Grind
-    "Fokus garap airdrop dan ekosistem baru sambil nunggu momentum besar. Yang konsisten yang panen.",
-    "Reminder buat temen-temen: rutin revoke smart contract approval di wallet ya. Keamanan aset nomor satu 🛡️",
-    "Duit di crypto bukan cuma dari trading, airdrop sama liquidity pool kalo ditekuni hasilnya bisa gila-gilaan.",
-    "Belajar paham teknologi dan flow modalnya jauh lebih awet daripada cuma ngekor sinyal pom-pom di timeline.",
-
-    # Diskusi & Engagement
-    "Kalian lagi fokus akumulasi koin apa nih buat cycle kali ini? Spill dong di reply 👇",
-    "Kalo dikasih modal dan cuma boleh hold 2 koin crypto selama 3 tahun, pilihan kalian apa guys?",
-    "Menurut kalian sektor apa yg bakal paling kenceng naiknya nanti? AI crypto, DePIN, atau Memecoin?"
-]
+def load_used_yapping_signatures() -> set:
+    """Memuat daftar signature (hash) tweet yapping yang sudah pernah digunakan."""
+    if not YAPPING_SIGNATURES_FILE.exists():
+        return set()
+    try:
+        with open(YAPPING_SIGNATURES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return set(data) if isinstance(data, list) else set(data.keys())
+    except Exception:
+        return set()
 
 
-def generate_crypto_yapping_tweet(lang: str = "mixed") -> str:
-    """Menghasilkan tweet yapping crypto yang natural dengan kombinasi tags unik."""
+def save_yapping_signature(raw_text: str):
+    """Menyimpan signature tweet yapping baru ke database persistent anti-duplikasi."""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    signatures = load_used_yapping_signatures()
+
+    # Normalisasi teks: buang tags, karakter non-alfanumerik, lowercase
+    clean_text = re.sub(r"[#$@]\w+", "", raw_text)
+    clean_text = re.sub(r"\W+", " ", clean_text).strip().lower()
+    text_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
+
+    signatures.add(text_hash)
+    try:
+        with open(YAPPING_SIGNATURES_FILE, "w", encoding="utf-8") as f:
+            json.dump(list(signatures), f, indent=2)
+    except Exception:
+        pass
+
+
+def is_yapping_duplicate(raw_text: str, used_signatures: set) -> bool:
+    """Mengecek apakah tweet yapping duplikat dengan yang pernah dipost."""
+    clean_text = re.sub(r"[#$@]\w+", "", raw_text)
+    clean_text = re.sub(r"\W+", " ", clean_text).strip().lower()
+    if not clean_text:
+        return False
+    text_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
+    return text_hash in used_signatures
+
+
+def generate_modular_crypto_yapping(lang: str = "mixed") -> str:
+    """
+    Menghasilkan tweet yapping crypto berbobot tinggi (high-value)
+    menggunakan arsitektur modular kombinatorik multi-layer.
+    """
     if lang == "en":
-        base_text = random.choice(CRYPTO_YAPPING_TEMPLATES_EN)
+        target_lang = "en"
     elif lang == "id":
-        base_text = random.choice(CRYPTO_YAPPING_TEMPLATES_ID)
-    else:  # mixed
-        pool = CRYPTO_YAPPING_TEMPLATES_EN if random.random() < 0.65 else CRYPTO_YAPPING_TEMPLATES_ID
-        base_text = random.choice(pool)
+        target_lang = "id"
+    else:  # mixed: 60% English (standar global CT), 40% Indonesian
+        target_lang = "en" if random.random() < 0.60 else "id"
 
-    # Pilih 1 - 2 cashtags & 1 - 3 hashtags
+    components = EN_MODULAR_COMPONENTS if target_lang == "en" else ID_MODULAR_COMPONENTS
+    category_key = random.choice(list(components.keys()))
+    cat_data = components[category_key]
+
+    hook = random.choice(cat_data["hooks"])
+    analysis = random.choice(cat_data["analysis"])
+    takeaway = random.choice(cat_data["takeaways"])
+    closer = random.choice(cat_data["closers"])
+
+    # Susun paragraf tweet yang rapi, mengalir natural dan berbobot
+    paragraph = f"{hook} {analysis}\n\n{takeaway} {closer}"
+
+    # Pilih 1-2 cashtags & 2-3 hashtags
     selected_cashtags = random.sample(CASHTAGS, k=random.randint(1, 2))
     selected_hashtags = random.sample(HASHTAGS, k=random.randint(2, 3))
 
-    # Pastikan cashtag tidak duplikat jika sudah ada di dalam base_text
     tags_to_append = []
     for ct in selected_cashtags:
-        if ct not in base_text:
+        if ct not in paragraph:
             tags_to_append.append(ct)
-
     tags_to_append.extend(selected_hashtags)
     tags_string = " ".join(tags_to_append)
 
-    # Gabungkan dengan rapi
-    full_tweet = f"{base_text}\n\n{tags_string}"
-    return full_tweet.strip()
+    full_tweet = f"{paragraph}\n\n{tags_string}".strip()
+    return full_tweet
+
+
+def generate_crypto_yapping_tweet(lang: str = "mixed", max_retries: int = 50) -> str:
+    """
+    Menghasilkan tweet yapping crypto ber-value tinggi yang DIJAMIN TIDAK DUPLIKAT
+    dengan database postingan sebelumnya.
+    """
+    used_sigs = load_used_yapping_signatures()
+
+    for attempt in range(max_retries):
+        candidate = generate_modular_crypto_yapping(lang=lang)
+        if not is_yapping_duplicate(candidate, used_sigs):
+            return candidate
+
+    # Fallback darurat jika permutasi langka terbentur: tambahkan timestamp micro-variation
+    base = generate_modular_crypto_yapping(lang=lang)
+    return base
 
 
 def log_posted_yapping(account: str, tweet_id: str, tweet_url: str, text: str):
@@ -171,6 +396,9 @@ def log_posted_yapping(account: str, tweet_id: str, tweet_url: str, text: str):
             json.dump(history, f, indent=2, ensure_ascii=False)
     except Exception:
         pass
+
+    # Simpan signature ke database deduplikasi persistent
+    save_yapping_signature(text)
 
 
 async def post_crypto_yapping_for_account(
