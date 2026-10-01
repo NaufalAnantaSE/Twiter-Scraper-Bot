@@ -685,6 +685,7 @@ async def run_hunter(
                     print(f"{BOLD}🎯 [{executed_count + 1}/{target_count}] Tweet dari @{author}{RESET}")
                     if tweet_age_str:
                         print(f"⏱️  Diposting : {GREEN}{tweet_age_str} [MASUK RENTANG 12 JAM ✓]{RESET}")
+                    print(f"🎁 Validasi  : {GREEN}{ga_reason}{RESET}")
                     print(f"📝 Teks      : \"{clean_preview}...\"")
                     print(f"🔗 Link      : https://x.com/{author}/status/{tweet_id}")
                     print(f"⚡ Menjalankan 4 Tugas:")

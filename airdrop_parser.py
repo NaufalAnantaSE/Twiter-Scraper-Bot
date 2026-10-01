@@ -101,13 +101,15 @@ def analyze_airdrop_tweet(text: str, author_username: str = "") -> AirdropRequir
 
     # 1. Deteksi spesifik "Drop Address / Drop Wallet"
     drop_patterns = [
-        r'\b(drop|comment|leave|send|reply\s+with)\s+(your\s+)?(address|wallet|addr|addy|0x|sol|solana|eth|phantom|metamask)\b',
-        r'\b(drop\s+(0x|sol|eth|address|wallet|addy))\b',
-        r'\b(address|wallet|0x|sol|addy)\s+(below|here|down\s+below|in\s+comments|in\s+the\s+comments)\b',
+        r'\b(drop|comment|leave|send|reply\s+with)\s+(your\s+)?([a-z0-9$]+\s+)?(address|addresses|wallet|wallets|addr|addrs|addy|addies|0x|sol|solana|eth|phantom|metamask)\b',
+        r'\b(drop\s+(your\s+)?(0x|sol|solana|eth|\$sol|\$eth|\$usdt|address|addresses|wallet|wallets|addy|addies))\b',
+        r'\b(address|addresses|wallet|wallets|0x|sol|addy|addies)\s+(below|here|down\s+below|in\s+comments|in\s+the\s+comments)\b',
         r'\bdrop\s+your\s+(evm|erc20|bep20|spl)\b',
-        r'\b(every\s+wallet\s+gets|first\s+\d+\s+wallets)\b',
-        r'\b(send\s+(some\s+)?(\$sol|\$eth|sol|eth))\b',
-        r'\bdrop\s+(\$sol|\$eth|\$usdt)\b'
+        r'\b(every\s+(wallet|address)\s+gets|first\s+\d+\s+(wallets|addresses))\b',
+        r'\b(send\s+(some\s+)?(\$sol|\$eth|sol|eth))\s+to\s+(first|\d+|wallets|addresses)\b',
+        r'\b(sending\s+some\s+(\$sol|\$eth|sol|eth))\b',
+        r'\b(who\s+needs\s+(\$sol|\$eth|\$usdt))\b.*(drop|wallet|wallets|address)',
+        r'\b(dropping\s+(\$sol|\$eth|\$usdt|some\s+sol|some\s+eth))\b'
     ]
     is_wallet_drop = is_valid_ga and any(re.search(p, clean_text, re.IGNORECASE) for p in drop_patterns)
 
