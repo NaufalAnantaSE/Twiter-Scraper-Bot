@@ -592,12 +592,19 @@ async def run_hunter(
             base_q = q_str.replace("&f=live", "").strip()
             search_targets.append((label, f"https://x.com/search?q={urllib.parse.quote(base_q)}&f=live"))
         else:
-            search_targets.append((label, f"https://x.com/search?q={urllib.parse.quote(q_str)}"))
+            search_targets.append((label, f"https://x.com/search?q={urllib.parse.quote(q_str)}&f=top"))
 
     async with async_playwright() as p:
         print(f"\n{YELLOW}Membuka browser Google Chrome (Headless: {headless})...{RESET}")
-        browser = await p.chromium.launch(channel="chrome", headless=headless)
-        context = await browser.new_context()
+        browser = await p.chromium.launch(
+            channel="chrome",
+            headless=headless,
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+        )
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        )
 
         # Optimasi kecepatan & hemat RAM: Blokir video, streaming berat & telemetry pelacak
         async def optimize_network_routes(route):
@@ -639,7 +646,12 @@ async def run_hunter(
             print(f"\n{CYAN}--- Memindai Tab: {BOLD}{tab_name}{RESET} ---")
             try:
                 await page.goto(search_url, wait_until="domcontentloaded", timeout=40000)
-                await asyncio.sleep(5)
+                # Tunggu linimasa SearchTimeline merender tweet pertama
+                try:
+                    await page.wait_for_selector('article[data-testid="tweet"]', timeout=25000)
+                except Exception:
+                    pass
+                await asyncio.sleep(2)
             except Exception as e:
                 print(f"{YELLOW}Gagal memuat {tab_name}: {e}{RESET}")
                 continue
@@ -753,19 +765,21 @@ async def run_hunter(
                         cooldown_sec = random.randint(delay_min, delay_max)
                         await clean_cooldown(cooldown_sec, "Jeda alami antar entri giveaway agar akun aman dari limit")
 
-                if len(seen_tweet_ids) == prev_seen_count:
+                if total_articles == 0:
+                    await asyncio.sleep(3.0)
+                elif len(seen_tweet_ids) == prev_seen_count:
                     consecutive_no_new += 1
                 else:
                     consecutive_no_new = 0
 
-                if consecutive_no_new >= 4:
+                if consecutive_no_new >= 5:
                     print(f"{YELLOW}↪️  Stream ini sudah mencapai batas tweet baru, beralih ke stream berikutnya...{RESET}")
                     break
 
                 if executed_count < target_count:
                     print(f"{YELLOW}⬇️  Scroll lebih dalam untuk menjelajahi postingan lainnya ({scroll_attempts + 1}/25)...{RESET}")
-                    await page.evaluate("window.scrollBy(0, window.innerHeight * 2.5);")
-                    await asyncio.sleep(2.5)
+                    await page.evaluate("window.scrollBy(0, 1500);")
+                    await asyncio.sleep(3.0)
                     scroll_attempts += 1
 
         print(f"\n{CYAN}============================================================{RESET}")
