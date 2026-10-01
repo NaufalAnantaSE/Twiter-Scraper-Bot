@@ -276,44 +276,111 @@ ID_MODULAR_COMPONENTS = {
 }
 
 
-def load_used_yapping_signatures() -> set:
-    """Memuat daftar signature (hash) tweet yapping yang sudah pernah digunakan."""
-    if not YAPPING_SIGNATURES_FILE.exists():
-        return set()
-    try:
-        with open(YAPPING_SIGNATURES_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return set(data) if isinstance(data, list) else set(data.keys())
-    except Exception:
-        return set()
+def normalize_text_for_comparison(text: str) -> str:
+    """Normalisasi teks untuk perbandingan: hapus tags, URLs, tanda baca, lowercase."""
+    t = re.sub(r"https?://\S+", "", text)
+    t = re.sub(r"[#$@]\w+", "", t)
+    t = re.sub(r"[^\w\s]", " ", t)
+    t = re.sub(r"\s+", " ", t).strip().lower()
+    return t
+
+
+def calculate_jaccard_similarity(text1: str, text2: str) -> float:
+    """Menghitung derajat kemiripan kata (Jaccard similarity) antara dua teks."""
+    words1 = set(text1.split())
+    words2 = set(text2.split())
+    if not words1 or not words2:
+        return 0.0
+    intersection = words1.intersection(words2)
+    union = words1.union(words2)
+    return len(intersection) / len(union)
+
+
+def has_ngram_overlap(text1: str, text2: str, n: int = 5) -> bool:
+    """Mengecek apakah ada N kata berurutan yang sama persis antara dua teks."""
+    tokens1 = text1.split()
+    tokens2 = text2.split()
+    if len(tokens1) < n or len(tokens2) < n:
+        return False
+    ngrams1 = set(" ".join(tokens1[i:i+n]) for i in range(len(tokens1) - n + 1))
+    ngrams2 = set(" ".join(tokens2[i:i+n]) for i in range(len(tokens2) - n + 1))
+    return len(ngrams1.intersection(ngrams2)) > 0
+
+
+def load_used_yapping_signatures() -> list[str]:
+    """Memuat seluruh teks dan signature postingan yapping sebelumnya."""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    all_history_texts = []
+
+    # 1. Dari log history yapping JSON
+    if YAPPING_LOG_FILE.exists():
+        try:
+            with open(YAPPING_LOG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for item in data.values():
+                    if isinstance(item, dict) and "text" in item:
+                        all_history_texts.append(item["text"])
+        except Exception:
+            pass
+
+    # 2. Dari file signatures
+    if YAPPING_SIGNATURES_FILE.exists():
+        try:
+            with open(YAPPING_SIGNATURES_FILE, "r", encoding="utf-8") as f:
+                sigs = json.load(f)
+                if isinstance(sigs, list):
+                    all_history_texts.extend(sigs)
+        except Exception:
+            pass
+
+    return all_history_texts
 
 
 def save_yapping_signature(raw_text: str):
-    """Menyimpan signature tweet yapping baru ke database persistent anti-duplikasi."""
+    """Menyimpan teks yapping baru ke database persistent anti-duplikasi."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    signatures = load_used_yapping_signatures()
+    history = load_used_yapping_signatures()
+    norm = normalize_text_for_comparison(raw_text)
 
-    # Normalisasi teks: buang tags, karakter non-alfanumerik, lowercase
-    clean_text = re.sub(r"[#$@]\w+", "", raw_text)
-    clean_text = re.sub(r"\W+", " ", clean_text).strip().lower()
-    text_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
+    if norm not in history:
+        history.append(norm)
 
-    signatures.add(text_hash)
     try:
         with open(YAPPING_SIGNATURES_FILE, "w", encoding="utf-8") as f:
-            json.dump(list(signatures), f, indent=2)
+            json.dump(history, f, indent=2, ensure_ascii=False)
     except Exception:
         pass
 
 
-def is_yapping_duplicate(raw_text: str, used_signatures: set) -> bool:
-    """Mengecek apakah tweet yapping duplikat dengan yang pernah dipost."""
-    clean_text = re.sub(r"[#$@]\w+", "", raw_text)
-    clean_text = re.sub(r"\W+", " ", clean_text).strip().lower()
-    if not clean_text:
+def is_yapping_duplicate(raw_text: str, used_history: list[str]) -> bool:
+    """
+    Sistem Multi-Layer Anti-Duplikasi:
+    1. Exact Match Check
+    2. Jaccard Word Similarity Check (Toleransi ketat: jika >= 40% kata sama -> DUPLIKAT)
+    3. N-gram Overlap Check (Jika ada 5 kata berturut-turut sama -> DUPLIKAT)
+    """
+    norm_new = normalize_text_for_comparison(raw_text)
+    if not norm_new or len(norm_new.split()) < 3:
         return False
-    text_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
-    return text_hash in used_signatures
+
+    for existing in used_history:
+        norm_exist = normalize_text_for_comparison(existing)
+        if not norm_exist:
+            continue
+
+        # 1. Exact match
+        if norm_new == norm_exist:
+            return True
+
+        # 2. Jaccard similarity (jika kemiripan kata >= 40%)
+        if calculate_jaccard_similarity(norm_new, norm_exist) >= 0.40:
+            return True
+
+        # 3. N-gram 5 kata berurutan yang sama persis
+        if has_ngram_overlap(norm_new, norm_exist, n=5):
+            return True
+
+    return False
 
 
 def generate_modular_crypto_yapping(lang: str = "mixed") -> str:

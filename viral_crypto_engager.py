@@ -219,41 +219,111 @@ NATURAL_RESPONSES = {
 }
 
 
-def load_used_comments() -> set:
-    """Memuat hash komentar yang pernah diposting untuk mencegah duplikasi."""
-    if not USED_COMMENTS_FILE.exists():
-        return set()
-    try:
-        with open(USED_COMMENTS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return set(data) if isinstance(data, list) else set(data.keys())
-    except Exception:
-        return set()
+def normalize_comment_for_comparison(text: str) -> str:
+    """Normalisasi komentar untuk perbandingan: hapus tanda baca, emoji, lowercase."""
+    t = re.sub(r"https?://\S+", "", text)
+    t = re.sub(r"[#$@]\w+", "", t)
+    t = re.sub(r"[^\w\s]", " ", t)
+    t = re.sub(r"\s+", " ", t).strip().lower()
+    return t
+
+
+def calculate_comment_jaccard_similarity(text1: str, text2: str) -> float:
+    """Menghitung derajat kemiripan kata antara dua komentar."""
+    words1 = set(text1.split())
+    words2 = set(text2.split())
+    if not words1 or not words2:
+        return 0.0
+    intersection = words1.intersection(words2)
+    union = words1.union(words2)
+    return len(intersection) / len(union)
+
+
+def has_comment_ngram_overlap(text1: str, text2: str, n: int = 4) -> bool:
+    """Mengecek apakah ada N kata berurutan yang sama persis antara dua komentar."""
+    tokens1 = text1.split()
+    tokens2 = text2.split()
+    if len(tokens1) < n or len(tokens2) < n:
+        return False
+    ngrams1 = set(" ".join(tokens1[i:i+n]) for i in range(len(tokens1) - n + 1))
+    ngrams2 = set(" ".join(tokens2[i:i+n]) for i in range(len(tokens2) - n + 1))
+    return len(ngrams1.intersection(ngrams2)) > 0
+
+
+def load_used_comments() -> list[str]:
+    """Memuat seluruh teks riwayat komentar sebelumnya."""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    history_comments = []
+
+    # 1. Dari log history engagement JSON
+    if ENGAGEMENT_LOG_FILE.exists():
+        try:
+            with open(ENGAGEMENT_LOG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for item in data.values():
+                    if isinstance(item, dict) and "comment" in item and item["comment"]:
+                        history_comments.append(item["comment"])
+        except Exception:
+            pass
+
+    # 2. Dari file used comments
+    if USED_COMMENTS_FILE.exists():
+        try:
+            with open(USED_COMMENTS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    history_comments.extend(data)
+        except Exception:
+            pass
+
+    return history_comments
 
 
 def save_used_comment(comment_text: str):
-    """Menyimpan hash komentar baru ke database persistent anti-duplikasi."""
+    """Menyimpan teks komentar baru ke database persistent anti-duplikasi."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     comments = load_used_comments()
+    norm = normalize_comment_for_comparison(comment_text)
 
-    clean_text = re.sub(r"\W+", " ", comment_text).strip().lower()
-    c_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
-    comments.add(c_hash)
+    if norm not in comments:
+        comments.append(norm)
 
     try:
         with open(USED_COMMENTS_FILE, "w", encoding="utf-8") as f:
-            json.dump(list(comments), f, indent=2)
+            json.dump(comments, f, indent=2, ensure_ascii=False)
     except Exception:
         pass
 
 
-def is_comment_duplicate(comment_text: str, used_comments: set) -> bool:
-    """Mengecek apakah komentar identik pernah diposting sebelumnya."""
-    clean_text = re.sub(r"\W+", " ", comment_text).strip().lower()
-    if not clean_text:
+def is_comment_duplicate(comment_text: str, used_comments: list[str]) -> bool:
+    """
+    Sistem Multi-Layer Anti-Duplikasi Komentar:
+    1. Exact Match Check
+    2. Jaccard Word Similarity Check (Toleransi ketat: jika >= 40% kata sama -> DUPLIKAT)
+    3. N-gram Overlap Check (Jika ada 4 kata berturut-turut sama -> DUPLIKAT)
+    """
+    norm_new = normalize_comment_for_comparison(comment_text)
+    if not norm_new or len(norm_new.split()) < 3:
         return False
-    c_hash = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
-    return c_hash in used_comments
+
+    for existing in used_comments:
+        norm_exist = normalize_comment_for_comparison(existing)
+        if not norm_exist:
+            continue
+
+        # 1. Exact match
+        if norm_new == norm_exist:
+            return True
+
+        # 2. Jaccard similarity
+        if calculate_comment_jaccard_similarity(norm_new, norm_exist) >= 0.40:
+            return True
+
+        # 3. N-gram 4 kata berurutan
+        if has_comment_ngram_overlap(norm_new, norm_exist, n=4):
+            return True
+
+    return False
 
 
 def detect_language(text: str) -> str:
