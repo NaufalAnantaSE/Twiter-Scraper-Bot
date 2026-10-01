@@ -273,7 +273,12 @@ async def engage_with_tweet(
 
             try:
                 await reply_textarea.wait_for(state="visible", timeout=8000)
-                await reply_textarea.click()
+                try:
+                    await reply_textarea.click(force=True, timeout=5000)
+                except Exception:
+                    await page.keyboard.press("Escape")
+                    await asyncio.sleep(0.5)
+                    await reply_textarea.click(force=True, timeout=5000)
                 await asyncio.sleep(0.4)
                 await reply_textarea.fill(chosen_comment)
                 await asyncio.sleep(0.8)
@@ -415,17 +420,20 @@ async def run_account_engagement(
         ])
         page = await context.new_page()
 
-        # 1. Cari kandidat tweet viral
-        selected_query = random.choice(VIRAL_SEARCH_QUERIES)
-        candidates = await scrape_viral_candidates(page, selected_query, limit=tweets_per_account + 2)
+        # 1. Cari kandidat tweet viral (akumulasi hingga mencukupi)
+        candidates = []
+        queries_to_try = list(VIRAL_SEARCH_QUERIES)
+        random.shuffle(queries_to_try)
+        target_limit = tweets_per_account + 2
 
-        if not candidates:
-            # Fallback ke query lain
-            for alt_q in VIRAL_SEARCH_QUERIES:
-                if alt_q != selected_query:
-                    candidates = await scrape_viral_candidates(page, alt_q, limit=tweets_per_account + 2)
-                    if candidates:
-                        break
+        for q in queries_to_try:
+            needed = target_limit - len(candidates)
+            if needed <= 0:
+                break
+            found = await scrape_viral_candidates(page, q, limit=needed)
+            for item in found:
+                if not any(c["id"] == item["id"] for c in candidates):
+                    candidates.append(item)
 
         print(f"  {GREEN}✓ Ditemukan {len(candidates)} tweet viral crypto yang cocok (bebas giveaway drop).{RESET}", flush=True)
 

@@ -261,7 +261,12 @@ async def post_crypto_yapping_for_account(
 
             # Isi teks
             print(f"  {YELLOW}Mengetik konten crypto yapping...{RESET}", flush=True)
-            await textarea.click()
+            try:
+                await textarea.click(force=True, timeout=6000)
+            except Exception:
+                await page.keyboard.press("Escape")
+                await asyncio.sleep(0.5)
+                await textarea.click(force=True, timeout=6000)
             await asyncio.sleep(0.5)
             await textarea.fill(tweet_text)
             await asyncio.sleep(1.0)
