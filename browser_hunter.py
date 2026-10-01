@@ -112,17 +112,17 @@ async def execute_tweet_tasks(
         # Buka tab terisolasi untuk tweet ini agar DOM & scrolling feed pencarian tetap bersih
         tweet_page = await context.new_page()
         try:
-            await tweet_page.goto(tweet_url, wait_until="commit", timeout=25000)
+            await tweet_page.goto(tweet_url, wait_until="domcontentloaded", timeout=30000)
         except Exception:
             pass
 
         # Tunggu tweet article ter-mount di DOM
         try:
-            await tweet_page.wait_for_selector('article[data-testid="tweet"], article, [data-testid="like"], [data-testid="reply"]', timeout=12000)
+            await tweet_page.wait_for_selector('article[data-testid="tweet"], [data-testid="like"], [data-testid="reply"]', timeout=15000)
         except Exception:
             pass
 
-        await asyncio.sleep(2.0)
+        await asyncio.sleep(2.5)
 
         # Tutup dialog / banner pengganggu jika muncul
         popup_selectors = [
@@ -138,7 +138,7 @@ async def execute_tweet_tasks(
                 el = tweet_page.locator(sel).first
                 if await el.count() > 0 and await el.is_visible():
                     await el.click(force=True)
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.3)
             except Exception:
                 pass
 
@@ -153,115 +153,140 @@ async def execute_tweet_tasks(
                 await asyncio.sleep(2.0)
                 if await main_tweet.count() == 0:
                     print(f"   ⚠️ Tweet ini sudah dihapus oleh pembuatnya atau tidak tersedia (Post Unavailable), dilewati.")
-                    return False
+                    return False, []
         except Exception:
             pass
 
         # ======================================================================
-        # TASK 1: LIKE ❤️
+        # TASK 1: LIKE ❤️ (Dengan Verifikasi Nyata Kemunculan Tombol Unlike)
         # ======================================================================
         try:
-            like_btn = main_tweet.locator('[data-testid="like"]').first
+            is_liked = False
             unlike_btn = main_tweet.locator('[data-testid="unlike"]').first
+            like_btn = main_tweet.locator('[data-testid="like"]').first
 
             # Cek instan jika sudah di-like
             if await unlike_btn.count() > 0 and await unlike_btn.is_visible():
+                is_liked = True
                 actions_done.append("Like ❤️ (Sudah liked)")
                 print(f"   [1/4] ❤️  Like Tweet       : {YELLOW}✓ Sudah di-like sebelumnya{RESET}")
             else:
                 try:
                     await main_tweet.scroll_into_view_if_needed()
                 except Exception:
-                    await tweet_page.evaluate("window.scrollBy(0, 200);")
+                    pass
 
-                for _ in range(5):
+                # Tunggu like_btn siap
+                for _ in range(6):
                     if (await like_btn.count() > 0 and await like_btn.is_visible()) or (await unlike_btn.count() > 0 and await unlike_btn.is_visible()):
                         break
                     await asyncio.sleep(0.4)
 
-                if await like_btn.count() > 0 and await like_btn.is_visible():
-                    await like_btn.click(force=True)
-                    try:
-                        await unlike_btn.wait_for(state="visible", timeout=4000)
-                    except Exception:
-                        pass
-                    actions_done.append("Like ❤️")
-                    print(f"   [1/4] ❤️  Like Tweet       : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                    await asyncio.sleep(0.3)
-                elif await unlike_btn.count() > 0:
+                if await unlike_btn.count() > 0 and await unlike_btn.is_visible():
+                    is_liked = True
                     actions_done.append("Like ❤️ (Sudah liked)")
                     print(f"   [1/4] ❤️  Like Tweet       : {YELLOW}✓ Sudah di-like sebelumnya{RESET}")
-                else:
-                    page_like = tweet_page.locator('[data-testid="like"]').first
-                    page_unlike = tweet_page.locator('[data-testid="unlike"]').first
-                    if await page_like.count() > 0 and await page_like.is_visible():
-                        await page_like.click(force=True)
+                elif await like_btn.count() > 0 and await like_btn.is_visible():
+                    await like_btn.click(force=True)
+                    # Verifikasi bahwa unlike_btn muncul di DOM X
+                    for _ in range(10):
+                        await asyncio.sleep(0.4)
+                        if await unlike_btn.count() > 0 and await unlike_btn.is_visible():
+                            is_liked = True
+                            break
+
+                    # Fallback jika belum muncul: klik dengan JS evaluate
+                    if not is_liked and await like_btn.count() > 0:
                         try:
-                            await page_unlike.wait_for(state="visible", timeout=4000)
+                            await tweet_page.evaluate("(el) => el.click()", await like_btn.element_handle())
+                            for _ in range(6):
+                                await asyncio.sleep(0.4)
+                                if await unlike_btn.count() > 0 and await unlike_btn.is_visible():
+                                    is_liked = True
+                                    break
                         except Exception:
                             pass
+
+                    if is_liked:
                         actions_done.append("Like ❤️")
                         print(f"   [1/4] ❤️  Like Tweet       : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                        await asyncio.sleep(0.3)
                     else:
-                        print(f"   [1/4] ❤️  Like Tweet       : {YELLOW}- Tombol like tidak ditemukan{RESET}")
+                        print(f"   [1/4] ❤️  Like Tweet       : {RED}✗ Gagal (Tidak terkonfirmasi di X){RESET}")
+                    await asyncio.sleep(0.5)
+                else:
+                    print(f"   [1/4] ❤️  Like Tweet       : {YELLOW}- Tombol like tidak ditemukan{RESET}")
         except Exception as e:
             print(f"   [1/4] ❤️  Like Tweet       : {RED}✗ Error ({e}){RESET}")
 
         # ======================================================================
-        # TASK 2: RETWEET 🔁
+        # TASK 2: RETWEET 🔁 (Dengan Verifikasi Nyata Kemunculan Tombol Unretweet)
         # ======================================================================
         try:
-            rt_btn = main_tweet.locator('[data-testid="retweet"]').first
+            is_retweeted = False
             unrt_btn = main_tweet.locator('[data-testid="unretweet"]').first
+            rt_btn = main_tweet.locator('[data-testid="retweet"]').first
 
             # Cek instan jika sudah di-retweet
             if await unrt_btn.count() > 0 and await unrt_btn.is_visible():
+                is_retweeted = True
                 actions_done.append("Retweet 🔁 (Sudah RT)")
                 print(f"   [2/4] 🔁 Retweet          : {YELLOW}✓ Sudah di-RT sebelumnya{RESET}")
             else:
-                for _ in range(5):
+                for _ in range(6):
                     if (await rt_btn.count() > 0 and await rt_btn.is_visible()) or (await unrt_btn.count() > 0 and await unrt_btn.is_visible()):
                         break
                     await asyncio.sleep(0.4)
 
-                if await rt_btn.count() > 0 and await rt_btn.is_visible():
-                    await rt_btn.scroll_into_view_if_needed()
-                    await rt_btn.click(force=True)
-                    confirm_btn = tweet_page.locator('[data-testid="retweetConfirm"], [role="menuitem"]:has-text("Repost"), [role="menuitem"]:has-text("Posting ulang")').first
-                    try:
-                        await confirm_btn.wait_for(state="visible", timeout=3000)
-                        await confirm_btn.click(force=True)
-                        actions_done.append("Retweet 🔁")
-                        print(f"   [2/4] 🔁 Retweet          : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                        await asyncio.sleep(0.3)
-                    except Exception:
-                        print(f"   [2/4] 🔁 Retweet          : {YELLOW}- Konfirmasi repost tidak muncul{RESET}")
-                    await tweet_page.keyboard.press("Escape")
-                elif await unrt_btn.count() > 0:
+                if await unrt_btn.count() > 0 and await unrt_btn.is_visible():
+                    is_retweeted = True
                     actions_done.append("Retweet 🔁 (Sudah RT)")
                     print(f"   [2/4] 🔁 Retweet          : {YELLOW}✓ Sudah di-RT sebelumnya{RESET}")
-                else:
-                    page_rt = tweet_page.locator('[data-testid="retweet"]').first
-                    page_unrt = tweet_page.locator('[data-testid="unretweet"]').first
-                    if await page_rt.count() > 0 and await page_rt.is_visible():
-                        await page_rt.scroll_into_view_if_needed()
-                        await page_rt.click(force=True)
-                        c_btn = tweet_page.locator('[data-testid="retweetConfirm"], [role="menuitem"]:has-text("Repost"), [role="menuitem"]:has-text("Posting ulang")').first
+                elif await rt_btn.count() > 0 and await rt_btn.is_visible():
+                    await rt_btn.scroll_into_view_if_needed()
+                    await rt_btn.click(force=True)
+                    await asyncio.sleep(0.8)
+
+                    confirm_btn = tweet_page.locator('[data-testid="retweetConfirm"], [role="menuitem"]:has-text("Repost"), [role="menuitem"]:has-text("Posting ulang")').first
+                    try:
+                        await confirm_btn.wait_for(state="visible", timeout=3500)
+                        await confirm_btn.click(force=True)
+                    except Exception:
                         try:
-                            await c_btn.wait_for(state="visible", timeout=3000)
-                            await c_btn.click(force=True)
-                            actions_done.append("Retweet 🔁")
-                            print(f"   [2/4] 🔁 Retweet          : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
-                            await asyncio.sleep(0.3)
+                            menu_item = tweet_page.locator('div[role="menu"] div[role="menuitem"]').first
+                            if await menu_item.count() > 0:
+                                await menu_item.click(force=True)
                         except Exception:
                             pass
-                        await tweet_page.keyboard.press("Escape")
-                    elif await page_unrt.count() > 0:
-                        actions_done.append("Retweet 🔁 (Sudah RT)")
-                        print(f"   [2/4] 🔁 Retweet          : {YELLOW}✓ Sudah di-RT sebelumnya{RESET}")
+
+                    # Verifikasi nyata bahwa unrt_btn muncul di DOM X
+                    for _ in range(10):
+                        await asyncio.sleep(0.4)
+                        if await unrt_btn.count() > 0 and await unrt_btn.is_visible():
+                            is_retweeted = True
+                            break
+
+                    # Fallback jika belum muncul: klik dengan JS evaluate pada confirm_btn
+                    if not is_retweeted and await confirm_btn.count() > 0:
+                        try:
+                            await tweet_page.evaluate("(el) => el.click()", await confirm_btn.element_handle())
+                            for _ in range(6):
+                                await asyncio.sleep(0.4)
+                                if await unrt_btn.count() > 0 and await unrt_btn.is_visible():
+                                    is_retweeted = True
+                                    break
+                        except Exception:
+                            pass
+
+                    if is_retweeted:
+                        actions_done.append("Retweet 🔁")
+                        print(f"   [2/4] 🔁 Retweet          : {GREEN}✓ Berhasil (Terkonfirmasi di X){RESET}")
                     else:
-                        print(f"   [2/4] 🔁 Retweet          : {YELLOW}- Tombol retweet tidak ditemukan{RESET}")
+                        print(f"   [2/4] 🔁 Retweet          : {RED}✗ Gagal (Tidak terkonfirmasi di X){RESET}")
+
+                    await tweet_page.keyboard.press("Escape")
+                    await asyncio.sleep(0.5)
+                else:
+                    print(f"   [2/4] 🔁 Retweet          : {YELLOW}- Tombol retweet tidak ditemukan{RESET}")
         except Exception as e:
             print(f"   [2/4] 🔁 Retweet          : {RED}✗ Error ({e}){RESET}")
             await tweet_page.keyboard.press("Escape")
@@ -460,6 +485,8 @@ async def execute_tweet_tasks(
     finally:
         if tweet_page:
             try:
+                # Beri jeda 1.5 detik agar seluruh mutasi GraphQL (Like, RT, Reply) selesai terkirim
+                await asyncio.sleep(1.5)
                 await tweet_page.close()
             except Exception:
                 pass

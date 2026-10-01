@@ -483,8 +483,9 @@ async def engage_with_tweet(
             print(f"  {YELLOW}⚠️ Tweet tidak dapat dimuat atau sudah dihapus.{RESET}", flush=True)
             return False, []
 
-        # 1. LIKE ❤️
+        # 1. LIKE ❤️ (Dengan Verifikasi Nyata Kemunculan Tombol Unlike)
         if do_like:
+            is_liked = False
             like_btn = main_tweet.locator('[data-testid="like"]').first
             unlike_btn = main_tweet.locator('[data-testid="unlike"]').first
             if await unlike_btn.count() > 0 and await unlike_btn.is_visible():
@@ -492,12 +493,29 @@ async def engage_with_tweet(
                 print(f"    ❤️  Like    : {YELLOW}✓ Sudah di-like sebelumnya{RESET}", flush=True)
             elif await like_btn.count() > 0 and await like_btn.is_visible():
                 await like_btn.click(force=True)
-                actions_done.append("Like ❤️")
-                print(f"    ❤️  Like    : {GREEN}✓ Berhasil Like{RESET}", flush=True)
-                await asyncio.sleep(0.8)
+                for _ in range(8):
+                    await asyncio.sleep(0.4)
+                    if await unlike_btn.count() > 0 and await unlike_btn.is_visible():
+                        is_liked = True
+                        break
+                if not is_liked and await like_btn.count() > 0:
+                    try:
+                        await page.evaluate("(el) => el.click()", await like_btn.element_handle())
+                        await asyncio.sleep(1.0)
+                        if await unlike_btn.count() > 0 and await unlike_btn.is_visible():
+                            is_liked = True
+                    except Exception:
+                        pass
+                if is_liked:
+                    actions_done.append("Like ❤️")
+                    print(f"    ❤️  Like    : {GREEN}✓ Berhasil Like (Terkonfirmasi di X){RESET}", flush=True)
+                else:
+                    print(f"    ❤️  Like    : {RED}✗ Gagal Like (Tidak terkonfirmasi di X){RESET}", flush=True)
+                await asyncio.sleep(0.5)
 
-        # 2. RETWEET 🔁
+        # 2. RETWEET 🔁 (Dengan Verifikasi Nyata Kemunculan Tombol Unretweet)
         if do_retweet:
+            is_retweeted = False
             rt_btn = main_tweet.locator('[data-testid="retweet"]').first
             unrt_btn = main_tweet.locator('[data-testid="unretweet"]').first
             if await unrt_btn.count() > 0 and await unrt_btn.is_visible():
@@ -510,12 +528,37 @@ async def engage_with_tweet(
                 try:
                     await confirm_btn.wait_for(state="visible", timeout=3500)
                     await confirm_btn.click(force=True)
-                    actions_done.append("Retweet 🔁")
-                    print(f"    🔁 Retweet : {GREEN}✓ Berhasil Retweet / Repost{RESET}", flush=True)
-                    await asyncio.sleep(0.8)
                 except Exception:
-                    pass
+                    try:
+                        menu_item = page.locator('div[role="menu"] div[role="menuitem"]').first
+                        if await menu_item.count() > 0:
+                            await menu_item.click(force=True)
+                    except Exception:
+                        pass
+
+                for _ in range(8):
+                    await asyncio.sleep(0.4)
+                    if await unrt_btn.count() > 0 and await unrt_btn.is_visible():
+                        is_retweeted = True
+                        break
+
+                if not is_retweeted and await confirm_btn.count() > 0:
+                    try:
+                        await page.evaluate("(el) => el.click()", await confirm_btn.element_handle())
+                        await asyncio.sleep(1.0)
+                        if await unrt_btn.count() > 0 and await unrt_btn.is_visible():
+                            is_retweeted = True
+                    except Exception:
+                        pass
+
+                if is_retweeted:
+                    actions_done.append("Retweet 🔁")
+                    print(f"    🔁 Retweet : {GREEN}✓ Berhasil Retweet (Terkonfirmasi di X){RESET}", flush=True)
+                else:
+                    print(f"    🔁 Retweet : {RED}✗ Gagal Retweet (Tidak terkonfirmasi di X){RESET}", flush=True)
+
                 await page.keyboard.press("Escape")
+                await asyncio.sleep(0.5)
 
         # 3. COMMENT 💬 (KONTEKSTUAL, BUKAN DROP WALLET)
         chosen_comment = ""
