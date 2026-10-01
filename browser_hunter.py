@@ -479,6 +479,8 @@ async def run_hunter(
     category: str = "ALL",
     target_count: int = 10,
     max_age_hours: float = 12.0,
+    delay_min: int = 10,
+    delay_max: int = 30,
     headless: bool = True,
     account_info: dict = None
 ):
@@ -507,10 +509,11 @@ async def run_hunter(
     print(f"Konfigurasi Bot:")
     if uname:
         print(f"  • Akun Twitter   : {CYAN}@{uname}{RESET}")
-    print(f"  • EVM (0x...)    : {GREEN}{evm_addr or '[KOSONG]'}{RESET}")
-    print(f"  • Solana         : {GREEN}{sol_addr or '[KOSONG]'}{RESET}")
-    print(f"  • Target Mode    : {MAGENTA}{BOLD}[{category.upper()}]{RESET}")
+    print(f"  • EVM / Base (0x): {GREEN}{evm_addr or '[KOSONG]'}{RESET}")
+    print(f"  • Solana (SOL)   : {GREEN}{sol_addr or '[KOSONG]'}{RESET}")
+    print(f"  • Target Mode    : {MAGENTA}{BOLD}[{category.upper()}] (SOL, EVM, BASE){RESET}")
     print(f"  • Batas Rentang  : {YELLOW}Hingga {max_age_hours} jam terakhir{RESET}")
+    print(f"  • Delay Entri    : {CYAN}{delay_min} - {delay_max} detik{RESET}")
     print(f"  • Format Balasan : {CYAN}Hanya Alamat Wallet Saja (Pure Address){RESET}")
 
     if not evm_addr and not sol_addr:
@@ -520,10 +523,10 @@ async def run_hunter(
     cat = category.upper()
     if cat == "EVM":
         query_streams = [
-            ("TOP: EVM Drop Langsung", '("drop your 0x" OR "drop 0x" OR "drop your evm" OR "drop your eth" OR "drop eth address" OR "drop metamask")'),
-            ("LIVE: EVM Giveaway & Airdrop", '("eth giveaway" OR "evm giveaway" OR "usdt giveaway" OR "crypto airdrop" OR "$ETH giveaway") ("0x" OR "evm" OR "eth" OR "metamask")&f=live'),
+            ("TOP: EVM & Base Drop Langsung", '("drop your 0x" OR "drop 0x" OR "drop your evm" OR "drop your base" OR "drop your eth" OR "drop metamask")'),
+            ("LIVE: EVM & Base Giveaway Terbaru", '("eth giveaway" OR "base giveaway" OR "evm giveaway" OR "crypto airdrop") ("0x" OR "evm" OR "eth" OR "base")&f=live'),
             ("TOP: EVM Instant Claim & Rewards", '("send you eth" OR "send you usdt" OR "every wallet gets" OR "first 500" OR "drop erc20" OR "drop bep20") ("0x" OR "evm" OR "eth")'),
-            ("LIVE: Live Feed Stream 0x", '("drop your 0x" OR "drop 0x" OR "drop your evm" OR "drop your eth")&f=live'),
+            ("LIVE: Live Feed Stream 0x", '("drop your 0x" OR "drop 0x" OR "drop your evm" OR "drop your base" OR "drop your eth")&f=live'),
             ("TOP: Multi-Chain EVM Bounty & Whitelist", '("crypto giveaway" OR "whitelist giveaway" OR "airdrop") ("0x" OR "evm" OR "drop eth")')
         ]
     elif cat == "SOLANA":
@@ -535,17 +538,16 @@ async def run_hunter(
             ("TOP: Solana Token & NFT Whitelist", '("solana" OR "$SOL") ("giveaway" OR "airdrop") ("drop wallet" OR "drop address" OR "drop addy")'),
             ("LIVE: Fast Solana Airdrops", '("$SOL" OR "solana") ("drop your" OR "drop below")&f=live')
         ]
-    else: # ALL
+    else: # ALL: SOL, EVM, BASE
         query_streams = [
-            ("TOP: Solana & EVM Drop Langsung", '("drop your sol" OR "drop your 0x" OR "drop your wallet" OR "drop your address" OR "drop sol addy" OR "drop 0x")'),
-            ("LIVE: Crypto Giveaway & Airdrop Terbaru", '("sol giveaway" OR "crypto giveaway" OR "$SOL giveaway" OR "$ETH giveaway" OR "solana airdrop") ("drop" OR "wallet" OR "address" OR "addy")&f=live'),
-            ("TOP: Instant Claim & Wallet Rewards", '("every wallet gets" OR "first 1000 wallets" OR "first 500 wallets" OR "send you sol" OR "send you $" OR "drop phantom" OR "drop metamask")'),
-            ("LIVE: Live Feed Stream All Networks", '("drop your sol" OR "drop your 0x" OR "drop your address" OR "drop your wallet")&f=live'),
-            ("TOP: Extended Multi-Chain Address Drops", '("drop address below" OR "drop your wallet below" OR "reply with your address" OR "leave your wallet" OR "leave your sol" OR "drop your addy")'),
-            ("LIVE: Multi-Asset Giveaways (SOL, ETH, USDT, BASE)", '("usdt giveaway" OR "sol giveaway" OR "eth giveaway" OR "base giveaway" OR "$USDT" OR "$SOL" OR "$ETH") ("drop address" OR "drop wallet" OR "drop 0x" OR "drop sol")&f=live'),
-            ("TOP: First Come & Retweet Drops", '("first 100" OR "first 200" OR "first 500" OR "random retweet" OR "retweet and drop") ("drop your" OR "drop address" OR "drop wallet")'),
-            ("TOP: Token & NFT Whitelist Giveaways", '("airdrop" OR "giveaway") ("drop sol" OR "drop 0x" OR "drop wallet" OR "drop addy")'),
-            ("LIVE: Fast Airdrop Drops", '("drop sol" OR "drop 0x" OR "drop wallet" OR "drop addy")&f=live')
+            ("TOP: Solana, EVM & Base Drop Langsung", '("drop your sol" OR "drop your 0x" OR "drop your base" OR "drop your evm" OR "drop sol address" OR "drop 0x" OR "drop base address" OR "drop sol addy")'),
+            ("LIVE: Solana, Base & EVM Giveaway Terbaru", '("sol giveaway" OR "base giveaway" OR "evm giveaway" OR "$SOL giveaway" OR "$ETH giveaway" OR "base airdrop") ("drop" OR "wallet" OR "address" OR "addy" OR "0x")&f=live'),
+            ("TOP: Instant Claim & Wallet Rewards (SOL/EVM/BASE)", '("every wallet gets" OR "first 1000 wallets" OR "first 500 wallets" OR "send you sol" OR "drop phantom" OR "drop metamask" OR "drop base")'),
+            ("LIVE: Live Feed Stream SOL & EVM & Base", '("drop your sol" OR "drop your 0x" OR "drop your base" OR "drop your address" OR "drop your wallet")&f=live'),
+            ("TOP: Extended SOL, Base & EVM Drops", '("drop address below" OR "drop your wallet below" OR "reply with your address" OR "leave your wallet" OR "leave your sol" OR "drop your addy") ("sol" OR "0x" OR "base" OR "evm")'),
+            ("LIVE: Multi-Asset Giveaways (SOL, BASE, EVM, USDT)", '("usdt giveaway" OR "sol giveaway" OR "base giveaway" OR "eth giveaway") ("drop address" OR "drop wallet" OR "drop 0x" OR "drop sol")&f=live'),
+            ("TOP: First Come & Retweet Drops (SOL/EVM/BASE)", '("first 100" OR "first 200" OR "first 500" OR "random retweet") ("drop your sol" OR "drop your 0x" OR "drop your base" OR "drop wallet")'),
+            ("LIVE: Fast SOL/EVM/BASE Drops", '("drop sol" OR "drop 0x" OR "drop base" OR "drop wallet" OR "drop addy")&f=live')
         ]
 
     search_targets = []
@@ -712,7 +714,7 @@ async def run_hunter(
                         print(f"{YELLOW}- Tidak ada aksi yang berhasil dikerjakan.{RESET}")
 
                     if executed_count < target_count:
-                        cooldown_sec = random.randint(25, 45)
+                        cooldown_sec = random.randint(delay_min, delay_max)
                         await clean_cooldown(cooldown_sec, "Jeda alami antar entri giveaway agar akun aman dari limit")
 
                 if len(seen_tweet_ids) == prev_seen_count:
@@ -746,8 +748,10 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--category", choices=["all", "evm", "solana"], default="all", help="Kategori target (all, evm, solana)")
     parser.add_argument("-m", "--max", type=int, default=10, help="Jumlah maksimal tweet (default: 10)")
     parser.add_argument("--hours", type=float, default=24.0, help="Batas rentang usia tweet dalam jam (default: 24.0)")
+    parser.add_argument("--delay-min", type=int, default=10, help="Delay minimal antar entri dalam detik (default: 10)")
+    parser.add_argument("--delay-max", type=int, default=30, help="Delay maksimal antar entri dalam detik (default: 30)")
     parser.add_argument("--loop", action="store_true", help="Jalankan terus-menerus dalam siklus berkala")
-    parser.add_argument("--interval", type=int, default=15, help="Jeda tidur antar siklus dalam menit jika --loop (default: 15)")
+    parser.add_argument("--interval", type=int, default=5, help="Jeda tidur antar siklus dalam menit jika --loop (default: 5)")
     parser.add_argument("--visible", action="store_true", help="Tampilkan jendela browser (default: headless)")
 
     args = parser.parse_args()
@@ -782,6 +786,8 @@ if __name__ == "__main__":
                     category=args.category,
                     target_count=args.max,
                     max_age_hours=args.hours,
+                    delay_min=args.delay_min,
+                    delay_max=args.delay_max,
                     headless=not args.visible,
                     account_info=account_data
                 )

@@ -113,12 +113,19 @@ python master_crypto_bot.py -a fannettt
 
 ### 📌 2. Menjalankan Engine Secara Terpisah (CLI Standalone)
 
-#### A. Giveaway Hunter (Drop Address EVM & Solana):
+#### A. Giveaway Hunter (Drop Address SOL, EVM, BASE):
 ```bash
-# Jalankan untuk akun tertentu dengan jangkauan 24 jam terakhir:
-python browser_hunter.py -a fannettt -c all -m 5 --hours 24
+# Jalankan untuk akun tertentu (looping kontinu, jeda 5 menit antar siklus, delay entri 10-30 detik):
+python browser_hunter.py -a fannettt -c all -m 10 --hours 24 --loop --interval 5 --delay-min 10 --delay-max 30
 
-# Pilihan kategori: -c all | -c solana | -c evm | -c usdt | -c base | -c sui
+# Opsi parameter:
+# -a, --account    : Target akun di accounts.json (contoh: fannettt)
+# -c, --category   : Kategori target (all = SOL, EVM, BASE; solana; evm)
+# -m, --max        : Jumlah target tweet giveaway per siklus (default: 10)
+# --hours          : Batas usia tweet dalam jam (default: 24.0)
+# --loop           : Jalankan siklus berkelanjutan otomatis
+# --interval       : Jeda istirahat antar siklus dalam menit (default: 5 menit)
+# --delay-min/max  : Rentang delay alami antar entri tweet dalam detik (default: 10-30s)
 ```
 
 #### B. Postingan Yapping Crypto Mandiri:
