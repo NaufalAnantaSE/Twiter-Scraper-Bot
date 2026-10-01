@@ -534,6 +534,9 @@ async def run_hunter(
             ("LIVE: Crypto Giveaway & Airdrop Terbaru", '("sol giveaway" OR "crypto giveaway" OR "$SOL giveaway" OR "$ETH giveaway" OR "solana airdrop") ("drop" OR "wallet" OR "address" OR "addy")&f=live'),
             ("TOP: Instant Claim & Wallet Rewards", '("every wallet gets" OR "first 1000 wallets" OR "first 500 wallets" OR "send you sol" OR "send you $" OR "drop phantom" OR "drop metamask")'),
             ("LIVE: Live Feed Stream All Networks", '("drop your sol" OR "drop your 0x" OR "drop your address" OR "drop your wallet")&f=live'),
+            ("TOP: Extended Multi-Chain Address Drops", '("drop address below" OR "drop your wallet below" OR "reply with your address" OR "leave your wallet" OR "leave your sol" OR "drop your addy")'),
+            ("LIVE: Multi-Asset Giveaways (SOL, ETH, USDT, BASE)", '("usdt giveaway" OR "sol giveaway" OR "eth giveaway" OR "base giveaway" OR "$USDT" OR "$SOL" OR "$ETH") ("drop address" OR "drop wallet" OR "drop 0x" OR "drop sol")&f=live'),
+            ("TOP: First Come & Retweet Drops", '("first 100" OR "first 200" OR "first 500" OR "random retweet" OR "retweet and drop") ("drop your" OR "drop address" OR "drop wallet")'),
             ("TOP: Token & NFT Whitelist Giveaways", '("airdrop" OR "giveaway") ("drop sol" OR "drop 0x" OR "drop wallet" OR "drop addy")'),
             ("LIVE: Fast Airdrop Drops", '("drop sol" OR "drop 0x" OR "drop wallet" OR "drop addy")&f=live')
         ]
@@ -695,8 +698,8 @@ async def run_hunter(
                         print(f"{YELLOW}- Tidak ada aksi yang berhasil dikerjakan.{RESET}")
 
                     if executed_count < target_count:
-                        # Bebas jeda antar tweet - langsung lanjut ke tweet berikutnya tanpa delay
-                        pass
+                        cooldown_sec = random.randint(25, 45)
+                        await clean_cooldown(cooldown_sec, "Jeda alami antar entri giveaway agar akun aman dari limit")
 
                 if len(seen_tweet_ids) == prev_seen_count:
                     consecutive_no_new += 1
@@ -722,20 +725,40 @@ async def run_hunter(
 
 if __name__ == "__main__":
     import argparse
+    from accounts_manager import load_accounts, sync_active_cookies
+
     parser = argparse.ArgumentParser(description="Twitter Airdrop Browser Hunter")
+    parser.add_argument("-a", "--account", type=str, default="", help="Pilih akun tertentu dari accounts.json (misal: fannettt)")
     parser.add_argument("-c", "--category", choices=["all", "evm", "solana"], default="all", help="Kategori target (all, evm, solana)")
     parser.add_argument("-m", "--max", type=int, default=10, help="Jumlah maksimal tweet (default: 10)")
-    parser.add_argument("--hours", type=float, default=12.0, help="Batas rentang usia tweet dalam jam (default: 12.0)")
+    parser.add_argument("--hours", type=float, default=24.0, help="Batas rentang usia tweet dalam jam (default: 24.0)")
     parser.add_argument("--visible", action="store_true", help="Tampilkan jendela browser (default: headless)")
 
     args = parser.parse_args()
+
+    account_data = None
+    if args.account:
+        data = load_accounts()
+        accs = data.get("accounts", {})
+        clean_target = args.account.lstrip("@").lower()
+        for k, v in accs.items():
+            if k.lower() == clean_target or v.get("screen_name", "").lower() == clean_target:
+                account_data = v
+                break
+        if account_data:
+            sync_active_cookies(account_data)
+            print(f"{GREEN}✓ Menjalankan perburuan giveaway khusus untuk akun: @{account_data.get('screen_name')}{RESET}")
+        else:
+            print(f"{RED}❌ Akun '{args.account}' tidak ditemukan di accounts.json!{RESET}")
+            sys.exit(1)
 
     try:
         asyncio.run(run_hunter(
             category=args.category,
             target_count=args.max,
             max_age_hours=args.hours,
-            headless=not args.visible
+            headless=not args.visible,
+            account_info=account_data
         ))
     except KeyboardInterrupt:
         print(f"\n{YELLOW}Dihentikan oleh pengguna.{RESET}")
