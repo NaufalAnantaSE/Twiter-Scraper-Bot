@@ -505,7 +505,7 @@ async def execute_tweet_tasks(
 async def run_hunter(
     category: str = "ALL",
     target_count: int = 10,
-    max_age_hours: float = 0.0,
+    max_age_hours: float = 48.0,
     delay_min: int = 10,
     delay_max: int = 30,
     headless: bool = True,
@@ -527,7 +527,14 @@ async def run_hunter(
     evm_addr = wallet_cfg.get("evm_address", "").strip()
     sol_addr = wallet_cfg.get("solana_address", "").strip()
 
-    age_display = f"Hingga {max_age_hours} jam terakhir" if (max_age_hours and max_age_hours > 0) else "Tanpa Batas (Semua Usia Tweet Diterima)"
+    if max_age_hours and max_age_hours > 0:
+        days = max_age_hours / 24.0
+        if days.is_integer():
+            age_display = f"Maksimal {int(max_age_hours)} jam ({int(days)} hari) terakhir"
+        else:
+            age_display = f"Maksimal {max_age_hours:.1f} jam ({days:.1f} hari) terakhir"
+    else:
+        age_display = "Tanpa Batas (Semua Usia Tweet Diterima)"
 
     print(f"""{CYAN}{BOLD}
 ╔═══════════════════════════════════════════════════════════════╗
@@ -776,7 +783,7 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--account", type=str, default="", help="Pilih akun tertentu dari accounts.json (misal: fannettt)")
     parser.add_argument("-c", "--category", choices=["all", "evm", "solana"], default="all", help="Kategori target (all, evm, solana)")
     parser.add_argument("-m", "--max", type=int, default=10, help="Jumlah maksimal tweet (default: 10)")
-    parser.add_argument("--hours", type=float, default=0.0, help="Batas rentang usia tweet dalam jam (0 = tanpa batas, default: 0.0)")
+    parser.add_argument("--hours", type=float, default=48.0, help="Batas rentang usia tweet dalam jam (default: 48.0 = 2 hari)")
     parser.add_argument("--delay-min", type=int, default=10, help="Delay minimal antar entri dalam detik (default: 10)")
     parser.add_argument("--delay-max", type=int, default=30, help="Delay maksimal antar entri dalam detik (default: 30)")
     parser.add_argument("--loop", action="store_true", help="Jalankan terus-menerus dalam siklus berkala")
