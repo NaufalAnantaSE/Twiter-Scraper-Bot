@@ -58,7 +58,9 @@ VIRAL_SEARCH_QUERIES = [
 FORBIDDEN_KEYWORDS = [
     "drop your", "drop address", "drop sol", "drop eth", "drop wallet",
     "send your sol", "send address", "airdrop giveaway", "winner in",
-    "dropping $", "giving away", "100$ to", "50$ to", "first 100", "retweet & drop"
+    "dropping $", "giving away", "100$ to", "50$ to", "first 100", "retweet & drop",
+    "winner", "winners", "usdt ||", "sol to", "eth to", "to enter", "tag 3", "tag 2",
+    "|| 6 hours", "|| 12 hours", "|| 24 hours", "lucky winners"
 ]
 
 # ==============================================================================
