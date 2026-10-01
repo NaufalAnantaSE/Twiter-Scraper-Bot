@@ -438,11 +438,17 @@ async def main_loop(
         return
 
     whitelist = load_whitelist(whitelist_file)
+    # Otomatis masukkan seluruh akun milik sendiri dari accounts.json ke whitelist
+    for k, v in accounts_dict.items():
+        sn = v.get("screen_name", "").strip().lstrip("@").lower()
+        if sn:
+            whitelist.add(sn)
+
     print(f"Konfigurasi:")
-    print(f"  • Mode Akun           : {'Semua 10 Akun' if not target_account else f'Hanya @{target_account}'}")
-    print(f"  • Simpan Follow-back  : {'Ya' if keep_followers else 'Tidak (Unfollow Semua)'}")
-    print(f"  • Whitelist Terpasang : {len(whitelist)} akun")
-    print(f"  • Jeda per Unfollow   : {delay_min}s - {delay_max}s (Cepat & Aman)")
+    print(f"  • Mode Akun           : {'Semua Akun Aktif' if not target_account else f'Hanya @{target_account}'}")
+    print(f"  • Simpan Follow-back  : {'Ya' if keep_followers else 'Tidak (Unfollow Semua Selain Whitelist)'}")
+    print(f"  • Whitelist Terpasang : {len(whitelist)} akun (Termasuk seluruh akun pribadi)")
+    print(f"  • Jeda per Unfollow   : {delay_min}s - {delay_max}s (Aman & Alami)")
     print(f"  • Mode Dry Run        : {'Aktif (Simulasi)' if dry_run else 'Nonaktif (Eksekusi Nyata)'}")
     print(f"  • Mode Browser        : {'Headless' if headless else 'Visible'}\n")
 
@@ -454,7 +460,11 @@ async def main_loop(
             print(f"{RED}❌ Akun @{target_account} tidak ditemukan di accounts.json!{RESET}")
             return
     else:
-        keys_to_process = list(accounts_dict.keys())
+        # Hanya proses akun aktif (lewati akun yang tersuspend atau tanpa token)
+        keys_to_process = [
+            k for k, v in accounts_dict.items()
+            if not v.get("suspended") and v.get("auth_token") and v.get("ct0")
+        ]
 
     total = len(keys_to_process)
     summary_report = []
