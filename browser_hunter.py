@@ -505,7 +505,7 @@ async def execute_tweet_tasks(
 async def run_hunter(
     category: str = "ALL",
     target_count: int = 10,
-    max_age_hours: float = 12.0,
+    max_age_hours: float = 0.0,
     delay_min: int = 10,
     delay_max: int = 30,
     headless: bool = True,
@@ -527,6 +527,8 @@ async def run_hunter(
     evm_addr = wallet_cfg.get("evm_address", "").strip()
     sol_addr = wallet_cfg.get("solana_address", "").strip()
 
+    age_display = f"Hingga {max_age_hours} jam terakhir" if (max_age_hours and max_age_hours > 0) else "Tanpa Batas (Semua Usia Tweet Diterima)"
+
     print(f"""{CYAN}{BOLD}
 ╔═══════════════════════════════════════════════════════════════╗
 ║         {header_title.center(53)} ║
@@ -539,7 +541,7 @@ async def run_hunter(
     print(f"  • EVM / Base (0x): {GREEN}{evm_addr or '[KOSONG]'}{RESET}")
     print(f"  • Solana (SOL)   : {GREEN}{sol_addr or '[KOSONG]'}{RESET}")
     print(f"  • Target Mode    : {MAGENTA}{BOLD}[{category.upper()}] (SOL, EVM, BASE){RESET}")
-    print(f"  • Batas Rentang  : {YELLOW}Hingga {max_age_hours} jam terakhir{RESET}")
+    print(f"  • Batas Rentang  : {YELLOW}{age_display}{RESET}")
     print(f"  • Delay Entri    : {CYAN}{delay_min} - {delay_max} detik{RESET}")
     print(f"  • Format Balasan : {CYAN}Hanya Alamat Wallet Saja (Pure Address){RESET}")
 
@@ -678,7 +680,7 @@ async def run_hunter(
                         print(f"[-] Skip @{author} (Tweet ID {tweet_id} sudah pernah dikerjakan oleh @{uname or 'akun ini'})")
                         continue
 
-                    # Periksa usia tweet (filter rentang max_age_hours)
+                    # Periksa usia tweet jika max_age_hours diatur (> 0)
                     tweet_age_str = ""
                     is_within_age = True
                     time_el = tweet_el.locator("time").first
@@ -690,7 +692,7 @@ async def run_hunter(
                                 now_dt = datetime.now(timezone.utc)
                                 age_hours = (now_dt - created_dt).total_seconds() / 3600.0
                                 tweet_age_str = f"{age_hours:.1f} jam yang lalu"
-                                if age_hours > max_age_hours:
+                                if max_age_hours and max_age_hours > 0 and age_hours > max_age_hours:
                                     print(f"[-] Skip @{author} (Usia tweet: {tweet_age_str}, melebihi {max_age_hours} jam)")
                                     is_within_age = False
                             except Exception:
@@ -713,7 +715,7 @@ async def run_hunter(
                     print(f"\n{CYAN}============================================================{RESET}")
                     print(f"{BOLD}🎯 [{executed_count + 1}/{target_count}] Tweet dari @{author}{RESET}")
                     if tweet_age_str:
-                        print(f"⏱️  Diposting : {GREEN}{tweet_age_str} [MASUK RENTANG 12 JAM ✓]{RESET}")
+                        print(f"⏱️  Diposting : {GREEN}{tweet_age_str}{RESET}")
                     print(f"🎁 Validasi  : {GREEN}{ga_reason}{RESET}")
                     print(f"📝 Teks      : \"{clean_preview}...\"")
                     print(f"🔗 Link      : https://x.com/{author}/status/{tweet_id}")
@@ -774,7 +776,7 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--account", type=str, default="", help="Pilih akun tertentu dari accounts.json (misal: fannettt)")
     parser.add_argument("-c", "--category", choices=["all", "evm", "solana"], default="all", help="Kategori target (all, evm, solana)")
     parser.add_argument("-m", "--max", type=int, default=10, help="Jumlah maksimal tweet (default: 10)")
-    parser.add_argument("--hours", type=float, default=24.0, help="Batas rentang usia tweet dalam jam (default: 24.0)")
+    parser.add_argument("--hours", type=float, default=0.0, help="Batas rentang usia tweet dalam jam (0 = tanpa batas, default: 0.0)")
     parser.add_argument("--delay-min", type=int, default=10, help="Delay minimal antar entri dalam detik (default: 10)")
     parser.add_argument("--delay-max", type=int, default=30, help="Delay maksimal antar entri dalam detik (default: 30)")
     parser.add_argument("--loop", action="store_true", help="Jalankan terus-menerus dalam siklus berkala")
