@@ -319,7 +319,7 @@ def is_yapping_duplicate(raw_text: str, used_signatures: set) -> bool:
 def generate_modular_crypto_yapping(lang: str = "mixed") -> str:
     """
     Menghasilkan tweet yapping crypto berbobot tinggi (high-value)
-    menggunakan arsitektur modular kombinatorik multi-layer.
+    dengan batas panjang MAKSIMAL 265 karakter (100% AMAN di bawah limit 280 Twitter).
     """
     if lang == "en":
         target_lang = "en"
@@ -332,27 +332,48 @@ def generate_modular_crypto_yapping(lang: str = "mixed") -> str:
     category_key = random.choice(list(components.keys()))
     cat_data = components[category_key]
 
-    hook = random.choice(cat_data["hooks"])
-    analysis = random.choice(cat_data["analysis"])
-    takeaway = random.choice(cat_data["takeaways"])
-    closer = random.choice(cat_data["closers"])
+    for _ in range(40):
+        # Variasi struktur agar panjang teks selalu proporsional dan tidak berlebih
+        style = random.choice(["hook_analysis", "analysis_takeaway", "hook_takeaway"])
 
-    # Susun paragraf tweet yang rapi, mengalir natural dan berbobot
-    paragraph = f"{hook} {analysis}\n\n{takeaway} {closer}"
+        hook = random.choice(cat_data["hooks"])
+        analysis = random.choice(cat_data["analysis"])
+        takeaway = random.choice(cat_data["takeaways"])
+        closer = random.choice(cat_data["closers"])
 
-    # Pilih 1-2 cashtags & 2-3 hashtags
-    selected_cashtags = random.sample(CASHTAGS, k=random.randint(1, 2))
-    selected_hashtags = random.sample(HASHTAGS, k=random.randint(2, 3))
+        if style == "hook_analysis":
+            body = f"{hook} {analysis}"
+        elif style == "analysis_takeaway":
+            body = f"{analysis}\n\n{takeaway}"
+        else:  # hook_takeaway
+            body = f"{hook} {takeaway}"
 
-    tags_to_append = []
-    for ct in selected_cashtags:
-        if ct not in paragraph:
-            tags_to_append.append(ct)
-    tags_to_append.extend(selected_hashtags)
-    tags_string = " ".join(tags_to_append)
+        # Tambahkan closer hanya jika masih ada ruang karakter yang cukup
+        if random.random() < 0.5 and (len(body) + len(closer) < 200):
+            paragraph = f"{body} {closer}".strip()
+        else:
+            paragraph = body.strip()
 
-    full_tweet = f"{paragraph}\n\n{tags_string}".strip()
-    return full_tweet
+        # Pilih 1 cashtags & 1-2 hashtags
+        selected_cashtags = random.sample(CASHTAGS, k=1)
+        selected_hashtags = random.sample(HASHTAGS, k=random.randint(1, 2))
+
+        tags_to_append = []
+        for ct in selected_cashtags:
+            if ct not in paragraph:
+                tags_to_append.append(ct)
+        tags_to_append.extend(selected_hashtags)
+        tags_string = " ".join(tags_to_append)
+
+        full_tweet = f"{paragraph}\n\n{tags_string}".strip()
+
+        # Validasi limit ketat: Twitter non-premium maksimal 280 karakter.
+        # Kita kunci batas aman di 140 - 265 karakter!
+        if 130 <= len(full_tweet) <= 265:
+            return full_tweet
+
+    # Fallback darurat jika permutasi melebihi batas
+    return full_tweet[:260].rsplit(" ", 1)[0]
 
 
 def generate_crypto_yapping_tweet(lang: str = "mixed", max_retries: int = 50) -> str:
@@ -503,25 +524,22 @@ async def post_crypto_yapping_for_account(
             await textarea.press("End")
             await textarea.type(" ")
             await textarea.press("Backspace")
-            await asyncio.sleep(0.5)
-
-            # Tutup dropdown autocomplete jika muncul
-            await page.keyboard.press("Escape")
-            await asyncio.sleep(0.5)
-
-            # Klik tombol Post
-            send_btn = page.locator('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]').first
-            await send_btn.wait_for(state="visible", timeout=6000)
-
-            if not await send_btn.is_enabled():
-                await asyncio.sleep(1.0)
-
-            if not await send_btn.is_enabled():
-                await browser.close()
-                return False, "", "Tombol kirim (tweetButton) non-aktif"
+            await asyncio.sleep(0.8)
 
             print(f"  {YELLOW}Mengirim tweet ke timeline...{RESET}", flush=True)
-            await send_btn.click(force=True)
+
+            # 1. Coba kirim via shortcut Control+Enter
+            await page.keyboard.press("Control+Enter")
+
+            # 2. Cek apakah ada tombol tweetButton
+            send_btn = page.locator('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]').first
+            for _ in range(3):
+                if created_tweet_id:
+                    break
+                if await send_btn.count() > 0 and await send_btn.is_enabled():
+                    await send_btn.click(force=True)
+                    break
+                await asyncio.sleep(1.0)
 
             # Tunggu respon CreateTweet
             for _ in range(8):
